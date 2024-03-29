@@ -68,7 +68,7 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
         return false;
     }
 
-    public void start(Scanner sc, GateWayInterface gateway)
+    public void start(Scanner sc, GateWayInterface gateway, String username)
             throws RemoteException, NotBoundException, MalformedURLException {
         int opcao = 0;
         do {
@@ -78,7 +78,7 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
                 case 1:
                     System.out.println("Insira o URL a indexar:");
                     String url = sc.next();
-                    gateway.indexUrl(url);
+                    gateway.indexUrl(username, url);
                     break;
                 case 2:
                     System.out.println("Insira o termo de pesquisa:");
@@ -101,12 +101,13 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
     public static void main(String[] args) throws MalformedURLException, NotBoundException, RemoteException {
         System.out.println("Googol Client.... a iniciar.");
         Scanner sc = new Scanner(System.in);
-
+        String username = new String();
+        username = args[0];
         System.out.println("Conectando ao servidor...");
         GateWayInterface gateway = (GateWayInterface) Naming.lookup("rmi://localhost/gate");
         Client client = new Client();
-        gateway.subscribe(args[0], (ClientInterface) client);
-        System.out.println("Client sent subscription request to server.");
-        client.start(sc, gateway);
+        gateway.subscribe(username, (ClientInterface) client);
+        System.out.println("Client sent subscription request to server.\n");
+        client.start(sc, gateway, username);
     }
 }

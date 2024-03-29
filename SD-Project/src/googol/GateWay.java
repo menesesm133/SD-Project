@@ -20,8 +20,8 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
         client = c;
     }
 
-    public void indexUrl(String url) throws RemoteException {
-        System.out.println("Indexing URL: " + url);
+    public void indexUrl(String name, String url) throws RemoteException {
+        System.out.println(name + " >" + "Indexing URL: " + url);
         urlQueue.enqueue(url);
         // TODO client.notify("URL indexed: " + url);
     }
@@ -33,5 +33,6 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
         GateWayInterface clientInterface = new GateWay();
         LocateRegistry.createRegistry(1099).rebind("gate", clientInterface);
         System.out.println("Gateway is ready.");
+        
     }
 }
