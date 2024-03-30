@@ -1,8 +1,13 @@
+package googol;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.util.StringTokenizer;
+import java.rmi.*;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -20,8 +25,10 @@ public class Downloader {
 
     static class Downloaders implements Runnable {
         private final String url;
+        QueueInterface urlqueue;
 
         public Downloaders(String url) {
+            super();
             this.url = url;
         }
 
@@ -47,17 +54,18 @@ public class Downloader {
                 for (Element link : links) {
                     textToMulticast.append(link.text()).append("\n").append(link.attr("abs:href")).append("\n");
                 }
-
                 // Multicast the text
                 multicast(textToMulticast.toString());
-
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (NotBoundException e) {
+                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
     }
 
-    private static void multicast(String message) {
+    private static void multicast(String message) throws NotBoundException {
         try {
             // Define the multicast address and the port
             InetAddress group = InetAddress.getByName("239.0.0.1");
@@ -74,6 +82,9 @@ public class Downloader {
 
             // Close the socket
             socket.close();
+
+            // RMI to the queue
+            QueueInterface urlqueue = (QueueInterface) Naming.lookup("rmi://localhost/queue");
 
             System.out.println("Multicast message sent successfully");
 

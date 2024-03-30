@@ -74,40 +74,48 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
         do {
             menu();
             opcao = validaInt(sc);
-            switch (opcao) {
-                case 1:
-                    System.out.println("Insira o URL a indexar:");
-                    String url = sc.next();
-                    gateway.indexUrl(username, url);
-                    break;
-                case 2:
-                    System.out.println("Insira o termo de pesquisa:");
-                    String termo = sc.next();
-                    // pesquisar(termo);
-                    break;
-                case 3:
-                    // admin();
-                    break;
-                case 4:
-                    System.out.println("A sair...");
-                    break;
-                default:
-                    System.out.println("Opção inválida.");
-                    break;
+            try {
+                switch (opcao) {
+                    case 1:
+                        System.out.println("Insira o URL a indexar:");
+                        String url = sc.next();
+                        gateway.indexUrl(username, url);
+                        break;
+                    case 2:
+                        System.out.println("Insira o termo de pesquisa:");
+                        String termo = sc.next();
+                        // pesquisar(termo);
+                        break;
+                    case 3:
+                        // admin();
+                        break;
+                    case 4:
+                        System.out.println("A sair...");
+                        break;
+                    default:
+                        System.out.println("Opção inválida.");
+                        break;
+                }
+            } catch (RemoteException e) {
+                e.printStackTrace();
             }
         } while (opcao != 4);
     }
 
     public static void main(String[] args) throws MalformedURLException, NotBoundException, RemoteException {
-        System.out.println("Googol Client.... a iniciar.");
-        Scanner sc = new Scanner(System.in);
-        String username = new String();
-        username = args[0];
-        System.out.println("Conectando ao servidor...");
-        GateWayInterface gateway = (GateWayInterface) Naming.lookup("rmi://localhost/gate");
-        Client client = new Client();
-        gateway.subscribe(username, (ClientInterface) client);
-        System.out.println("Client sent subscription request to server.\n");
-        client.start(sc, gateway, username);
+        try {
+            System.out.println("Googol Client.... a iniciar.");
+            Scanner sc = new Scanner(System.in);
+            String username = new String();
+            username = args[0];
+            System.out.println("Conectando ao servidor...");
+            GateWayInterface gateway = (GateWayInterface) Naming.lookup("rmi://localhost/gate");
+            Client client = new Client();
+            gateway.subscribe(username, (ClientInterface) client);
+            System.out.println("Client sent subscription request to server.\n");
+            client.start(sc, gateway, username);
+        } catch (RemoteException | MalformedURLException | NotBoundException e) {
+            e.printStackTrace();
+        }
     }
 }
