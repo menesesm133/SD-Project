@@ -3,7 +3,6 @@ package googol;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.rmi.*;
 import java.util.HashSet;
 
 public class URLQueue extends UnicastRemoteObject implements QueueInterface {
