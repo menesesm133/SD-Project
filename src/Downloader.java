@@ -80,9 +80,13 @@ public class Downloader implements Runnable, Remote {
         }
     }
 
-    // Falta fazer algo para conectar isto às queues(Ainda não sei bem se vamos ter que fazer como eu estou a fazer para o IndexStorage)
-    // Se sim é basicamente só copiar o código do IndexStorage e mudar o nome das variáveis
-    // Já tive a testar e está tudo a conectar bem, no entanto agora temos de fazer uma coisa para correr todas estas threads nalgum sitio se queremos correr isto.
+    // Falta fazer algo para conectar isto às queues(Ainda não sei bem se vamos ter
+    // que fazer como eu estou a fazer para o IndexStorage)
+    // Se sim é basicamente só copiar o código do IndexStorage e mudar o nome das
+    // variáveis
+    // Já tive a testar e está tudo a conectar bem, no entanto agora temos de fazer
+    // uma coisa para correr todas estas threads nalgum sitio se queremos correr
+    // isto.
 
     public void stop() {
         this.running = false;
@@ -100,6 +104,12 @@ public class Downloader implements Runnable, Remote {
     public void run() {
         this.running = true;
 
+        try {
+            urlqueue = (QueueInterface) Naming.lookup("rmi://localhost/queue");
+        } catch (MalformedURLException | RemoteException | NotBoundException e) {
+            e.printStackTrace();
+        }
+
         while (this.running) {
             try {
                 Thread.sleep(1000);
@@ -116,7 +126,7 @@ public class Downloader implements Runnable, Remote {
                 // Nothing happens
             }
         }
-        
+
         System.out.println("Downloader " + this.downloaderId + " is stopping...");
     }
 }
