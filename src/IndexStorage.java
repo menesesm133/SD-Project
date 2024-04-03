@@ -1,6 +1,8 @@
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -15,14 +17,16 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     private final HashSet<URLContent> content;
     private final HashMap<String, HashSet<String>> urls;
     private final HashMap<String, HashSet<String>> urlsWord;
+    private final Map<String, Integer> urlCount;
 
     public IndexStorage(String word) throws RemoteException {
         this.word = word;
-        this.wordCount = new HashMap<String, Integer>();
+        this.wordCount = new HashMap<>();
         this.callback = new ArrayList<>();
         this.content = new HashSet<>();
         this.urls = new HashMap<>();
         this.urlsWord = new HashMap<>();
+        this.urlCount = new HashMap<>();
     }
 
     public void addUrlsWord(String word, HashSet<String> urls) {
@@ -32,12 +36,16 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
             nameUrls = new HashSet<String>();
             urlsWord.put(word, nameUrls);
         }
-        
+
         nameUrls.addAll(urls);
         wordCount.merge(word, urls.size(), Integer::sum);
     }
 
-    public HashSet<String> searchWord(String word) {
+    public HashSet<String> searchWord(String token) {
+        return urlsWord.get(token);
+    }
+
+    public HashSet<String> search(String word) {
         StringTokenizer token = new StringTokenizer(word, " ,:/.?'_");
         HashSet<String> next = searchWord(token.nextToken());
 
@@ -45,13 +53,13 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
             return null;
 
         while (token.hasMoreElements()) {
-            HashSet<String> urls = searchWord(token.nextToken());
-            urls.retainAll(next);
+            HashSet<String> tokens = searchWord(token.nextToken());
+            tokens.retainAll(next);
 
-            if (urls.size() == 0)
+            if (tokens.size() == 0)
                 return null;
 
-            next = urls;
+            next = tokens;
         }
 
         return next;
@@ -61,13 +69,31 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         return word;
     }
 
-    public void addContent(String url, String text, String title , HashSet<String> urls) {
+    public void addContent(String url, String text, String title, HashSet<String> urls) {
         URLContent content = new URLContent();
         content.url = url;
         content.title = title;
         content.text = text;
         this.content.add(content);
         this.urls.put(url, urls);
+        urlCount.merge(url, urls.size(), Integer::sum);
+    }
+
+    // Por aquilo que eu vi isto deve funceminar, mas ainda não testei.
+    public HashSet<String> urlImportance() {
+        List<Map.Entry<String, Integer>> sortedUrls = new ArrayList<>(urlCount.entrySet());
+
+        sortedUrls.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
+
+        HashSet<String> importantUrls = new HashSet<>();
+
+        for (Map.Entry<String, Integer> entry : sortedUrls) {
+            if (entry.getValue() > 1) {
+                importantUrls.add(entry.getKey());
+            }
+        }
+
+        return importantUrls;
     }
 
     public static void main(String[] args) throws RemoteException {
