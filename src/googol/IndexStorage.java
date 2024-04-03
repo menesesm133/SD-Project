@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -83,12 +84,11 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     }
 
     // Por aquilo que eu vi isto deve funceminar, mas ainda não testei.
-    public HashSet<String> urlImportance() {
+    public ArrayList<String> urlImportance() {
         List<Map.Entry<String, Integer>> sortedUrls = new ArrayList<>(urlCount.entrySet());
-
         sortedUrls.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
 
-        HashSet<String> importantUrls = new HashSet<>();
+        ArrayList<String> importantUrls = new ArrayList<>();
 
         for (Map.Entry<String, Integer> entry : sortedUrls) {
             if (entry.getValue() > 1) {
