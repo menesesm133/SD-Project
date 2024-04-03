@@ -1,9 +1,7 @@
 package googol;
-
 import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.List;
 import java.util.Scanner;
 
 public class Client extends UnicastRemoteObject implements ClientInterface {

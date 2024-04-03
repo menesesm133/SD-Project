@@ -1,3 +1,4 @@
+package googol;
 import java.rmi.*;
 
 public interface QueueInterface extends Remote {

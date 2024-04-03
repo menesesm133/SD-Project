@@ -1,6 +1,6 @@
+package googol;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.StringTokenizer;
 import java.rmi.*;
@@ -79,14 +79,6 @@ public class Downloader implements Runnable, Remote {
             return false;
         }
     }
-
-    // Falta fazer algo para conectar isto às queues(Ainda não sei bem se vamos ter
-    // que fazer como eu estou a fazer para o IndexStorage)
-    // Se sim é basicamente só copiar o código do IndexStorage e mudar o nome das
-    // variáveis
-    // Já tive a testar e está tudo a conectar bem, no entanto agora temos de fazer
-    // uma coisa para correr todas estas threads nalgum sitio se queremos correr
-    // isto.
 
     public void stop() {
         this.running = false;

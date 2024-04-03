@@ -1,3 +1,5 @@
+package googol;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -97,6 +99,14 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         return importantUrls;
     }
 
+    public void callback(String downloader) {
+        this.callback.add(downloader);
+    }
+
+    public String getCallback() throws RemoteException {
+        return this.callback.toString();
+    }
+
     public static void main(String[] args) throws RemoteException {
         System.out.println("Index Storage Barrels is starting...");
         IndexStorage barrel = new IndexStorage("IndexStorageBarrel");
@@ -105,13 +115,5 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         System.out.print("Press any key to stop IndexStorageBarrel...");
         scanner.nextLine();
         scanner.close();
-    }
-
-    public void callback(String downloader) {
-        this.callback.add(downloader);
-    }
-
-    public String getCallback() throws RemoteException {
-        return this.callback.toString();
     }
 }

@@ -1,3 +1,4 @@
+package googol;
 
 public class URLContent {
     String url;

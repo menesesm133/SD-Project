@@ -1,6 +1,4 @@
 package googol;
-
-import java.net.MalformedURLException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
@@ -37,8 +35,6 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
         try {
             queueInterface = new URLQueue("queue");
             LocateRegistry.createRegistry(1100).rebind("queue", queueInterface);
-
-            GateWay h = new GateWay();
             GateWayInterface gateInterface = new GateWay();
             LocateRegistry.createRegistry(1099).rebind("gate", gateInterface);
             System.out.println("Gateway is ready.");
