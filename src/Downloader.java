@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.StringTokenizer;
 import java.rmi.*;
 
@@ -40,8 +41,8 @@ public class Downloader implements Runnable, Remote {
                 text.append(tokens.nextToken().toLowerCase()).append(" ");
             }
 
-            // Create array with links
-            ArrayList<String> linksList = new ArrayList<>();
+            // Create HashSet with links
+            HashSet<String> linksList = new HashSet<String>();
 
             // Extract links to other pages
             Elements links = doc.select("a[href]");
@@ -56,9 +57,7 @@ public class Downloader implements Runnable, Remote {
                 urlqueue.enqueue(link);
             }
 
-            indexStorage.addTitle(url, title);
-            indexStorage.addText(url, text.toString());
-            indexStorage.addLink(url, linksList);
+            indexStorage.addContent(title, text.toString(), url, linksList);
             return true;
 
         } catch (IOException e) {

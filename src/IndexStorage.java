@@ -10,35 +10,31 @@ import java.rmi.registry.LocateRegistry;
 
 public class IndexStorage extends UnicastRemoteObject implements IndexStorageInterface {
     private final String word;
-    private ArrayList<String> urls;
-    private final HashMap<String, HashSet<String>> invertedIndex;
     private final Map<String, Integer> wordCount;
     private final ArrayList<String> callback;
-    private final HashMap<String, String> title;
-    private final HashMap<String, String> text;
-    private final HashMap<String, ArrayList<String>> link;
+    private final HashSet<URLContent> content;
+    private final HashMap<String, HashSet<String>> urls;
+    private final HashMap<String, HashSet<String>> urlsWord;
 
     public IndexStorage(String word) throws RemoteException {
         this.word = word;
-        this.urls = new ArrayList<String>();
-        this.invertedIndex = new HashMap<String, HashSet<String>>();
         this.wordCount = new HashMap<String, Integer>();
         this.callback = new ArrayList<>();
-        this.title = new HashMap<>();
-        this.text = new HashMap<>();
-        this.link = new HashMap<>();
+        this.content = new HashSet<>();
+        this.urls = new HashMap<>();
+        this.urlsWord = new HashMap<>();
     }
 
-    public void addIndex(String word, String url) {
-        HashSet<String> nameUrls = invertedIndex.get(word);
+    public void addUrlsWord(String word, HashSet<String> urls) {
+        HashSet<String> nameUrls = urlsWord.get(word);
 
         if (nameUrls == null) { // If the word is not in the index
             nameUrls = new HashSet<String>();
-            invertedIndex.put(word, nameUrls);
+            urlsWord.put(word, nameUrls);
         }
-
-        nameUrls.add(url);
-        wordCount.merge(word, 1, Integer::sum);
+        
+        nameUrls.addAll(urls);
+        wordCount.merge(word, urls.size(), Integer::sum);
     }
 
     public HashSet<String> searchWord(String word) {
@@ -65,20 +61,13 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         return word;
     }
 
-    public ArrayList<String> getUrls() {
-        return urls;
-    }
-
-    public void addTitle(String url, String titlet) {
-        title.put(url, titlet);
-    }
-
-    public void addText(String url, String textt) {
-        text.put(url, textt);
-    }
-
-    public void addLink(String url, ArrayList<String> links) {
-        link.put(url, links);
+    public void addContent(String url, String text, String title , HashSet<String> urls) {
+        URLContent content = new URLContent();
+        content.url = url;
+        content.title = title;
+        content.text = text;
+        this.content.add(content);
+        this.urls.put(url, urls);
     }
 
     public static void main(String[] args) throws RemoteException {
