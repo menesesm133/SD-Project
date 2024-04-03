@@ -1,4 +1,5 @@
 package googol;
+
 import java.rmi.registry.LocateRegistry;
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
@@ -6,6 +7,7 @@ import java.rmi.server.UnicastRemoteObject;
 public class GateWay extends UnicastRemoteObject implements GateWayInterface {
     static ClientInterface client;
     static QueueInterface queueInterface;
+    static IndexStorageInterface indexStorage;
 
     protected GateWay() throws RemoteException {
         super();
@@ -21,6 +23,10 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
         }
     }
 
+    public void searchWord() {
+
+    }
+
     public void indexUrl(String name, String url) {
         try {
             System.out.println(name + ">" + "Indexing URL: " + url);
@@ -33,6 +39,9 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
 
     public static void main(String[] args) {
         try {
+
+            // indexStorage = new IndexStorage(""); to mt confuso ;(
+
             queueInterface = new URLQueue("queue");
             LocateRegistry.createRegistry(1100).rebind("queue", queueInterface);
             GateWayInterface gateInterface = new GateWay();

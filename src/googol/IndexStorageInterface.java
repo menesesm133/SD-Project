@@ -7,6 +7,8 @@ import java.util.HashSet;
 public interface IndexStorageInterface extends Remote {
     public void addUrlsWord(String word, HashSet<String> urls) throws RemoteException;
 
+    public void printContent(String key) throws RemoteException;
+
     public HashSet<String> search(String word) throws RemoteException;
 
     public HashSet<String> searchWord(String word) throws RemoteException;

@@ -1,6 +1,7 @@
 package googol;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,16 +16,18 @@ import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
 
 public class IndexStorage extends UnicastRemoteObject implements IndexStorageInterface {
-    private final String word;
+    private String word;
     private final Map<String, Integer> wordCount;
     private final ArrayList<String> callback;
     private final HashSet<URLContent> content;
     private final HashMap<String, HashSet<String>> urls;
     private final HashMap<String, HashSet<String>> urlsWord;
     private final Map<String, Integer> urlCount;
+    private static int idCounter = 0;
+    private final int id;
 
-    public IndexStorage(String word) throws RemoteException {
-        this.word = word;
+    public IndexStorage() throws RemoteException {
+        this.id = idCounter++;
         this.wordCount = new HashMap<>();
         this.callback = new ArrayList<>();
         this.content = new HashSet<>();
@@ -99,6 +102,44 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         return importantUrls;
     }
 
+    public void printContent(String key) throws RemoteException {
+        List<String> results = new ArrayList<>();
+        search(key).forEach(url -> {
+            content.stream().filter(c -> c.url.equals(url)).forEach(c -> {
+                String[] words = c.text.split("\\s+");
+                for (int i = 0; i < words.length; i++) {
+                    if (words[i].equals(key)) {
+                        int start = Math.max(0, i - 7);
+                        int end = Math.min(words.length, i + 8);
+                        String context = String.join(" ", Arrays.copyOfRange(words, start, end));
+                        results.add("Title: " + c.title + "\n" +
+                                "URL: " + c.url + "\n" +
+                                "Text: " + context + "\n" +
+                                "Links: " + urls.get(c.url) + "\n");
+                    }
+                }
+            });
+        });
+        Scanner scanner = new Scanner(System.in);
+        int pageSize = 10;
+        while (true) {
+            System.out.println("Enter page number (0 to quit):");
+            int page = scanner.nextInt();
+            if (page == 0) {
+                break;
+            }
+            int start = (page - 1) * pageSize;
+            if (start < results.size()) {
+                int end = Math.min(start + pageSize, results.size());
+                for (int i = start; i < end; i++) {
+                    System.out.println(results.get(i));
+                }
+            } else {
+                System.out.println("Invalid page number");
+            }
+        }
+    }
+
     public void callback(String downloader) {
         this.callback.add(downloader);
     }
@@ -111,6 +152,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         System.out.println("Index Storage Barrels is starting...");
         IndexStorage barrel = new IndexStorage("IndexStorageBarrel");
         LocateRegistry.createRegistry(1099).rebind("IndexStorageBarrel", barrel);
+
         Scanner scanner = new Scanner(System.in);
         System.out.print("Press any key to stop IndexStorageBarrel...");
         scanner.nextLine();
