@@ -57,6 +57,7 @@ public class Downloader implements Runnable, Remote {
                 urlqueue.enqueue(link);
             }
 
+            // Add the content to the index
             indexStorage.addContent(title, text.toString(), url, linksList);
             return true;
 

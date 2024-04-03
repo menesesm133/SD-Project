@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.StringTokenizer;
 
 import java.rmi.server.UnicastRemoteObject;
@@ -100,6 +101,10 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         System.out.println("Index Storage Barrels is starting...");
         IndexStorage barrel = new IndexStorage("IndexStorageBarrel");
         LocateRegistry.createRegistry(1099).rebind("IndexStorageBarrel", barrel);
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Press any key to stop IndexStorageBarrel...");
+        scanner.nextLine();
+        scanner.close();
     }
 
     public void callback(String downloader) {
