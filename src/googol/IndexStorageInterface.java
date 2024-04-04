@@ -15,10 +15,6 @@ public interface IndexStorageInterface extends Remote {
 
     public String getWord() throws RemoteException;
 
-    public void callback(String downloader) throws RemoteException;
-
-    public String getCallback() throws RemoteException;
-
     public void addContent(String title, String text, String url, HashSet<String> urls) throws RemoteException;
 
     public ArrayList<String> urlImportance() throws RemoteException;

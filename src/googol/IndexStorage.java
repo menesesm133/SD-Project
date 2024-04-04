@@ -17,11 +17,15 @@ import java.rmi.registry.LocateRegistry;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
+import java.net.NetworkInterface;
 
 public class IndexStorage extends UnicastRemoteObject implements IndexStorageInterface {
     private String word;
     private final Map<String, Integer> wordCount;
-    private final ArrayList<String> callback;
     private final HashSet<URLContent> content;
     private final HashMap<String, HashSet<String>> urls;
     private final HashMap<String, HashSet<String>> urlsWord;
@@ -29,11 +33,13 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     private static int idCounter = 0;
     private final int id;
     private String database = "./database/database.txt";
+    private String MULTICAST_ADDRESS = "224.3.2.1";
+    private int PORT = 4321;
 
     public IndexStorage(String name) throws RemoteException {
+        super();
         this.id = idCounter++;
         this.wordCount = new HashMap<>();
-        this.callback = new ArrayList<>();
         this.content = new HashSet<>();
         this.urls = new HashMap<>();
         this.urlsWord = new HashMap<>();
@@ -146,14 +152,6 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         scanner.close();
     }
 
-    public void callback(String downloader) {
-        this.callback.add(downloader);
-    }
-
-    public String getCallback() throws RemoteException {
-        return this.callback.toString();
-    }
-
     public int getId() {
         return this.id;
     }
@@ -185,7 +183,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
 
             for (Map.Entry<String, HashSet<String>> entry : urlsWord.entrySet()) {
                 writer.write(entry.getKey() + "|");
-                
+
                 for (String url : entry.getValue()) {
                     writer.write(url + ",");
                 }
@@ -197,10 +195,37 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         }
     }
 
+    public void run() {
+        MulticastSocket socket = null;
+
+        try {
+            socket = new MulticastSocket(PORT);
+            InetAddress mcastaddr = InetAddress.getByName(MULTICAST_ADDRESS);
+            socket.joinGroup(new InetSocketAddress(mcastaddr, 0), NetworkInterface.getByIndex(0));
+
+            while (true) {
+                byte[] buffer = new byte[1024];
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
+                System.out.println("IndexStorage " + this.id + " received: " + new String(packet.getData()));
+                
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (socket != null) {
+                socket.close();
+            }
+        }
+    }
+
     public static void main(String[] args) throws RemoteException {
         System.out.println("Index Storage Barrels is starting...");
         IndexStorage barrel = new IndexStorage("IndexStorageBarrel");
         LocateRegistry.createRegistry(1099).rebind("IndexStorageBarrel", barrel);
+
+        Thread barrelThread = new Thread();
+        barrelThread.start();
 
         Scanner scanner = new Scanner(System.in);
         System.out.print("Press any key to stop IndexStorageBarrel...");

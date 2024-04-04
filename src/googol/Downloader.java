@@ -1,9 +1,15 @@
 package googol;
 
 import java.io.IOException;
+
+import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.MulticastSocket;
+
 import java.util.HashSet;
 import java.util.StringTokenizer;
+
 import java.rmi.*;
 
 import org.jsoup.Jsoup;
@@ -11,11 +17,16 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.lang.Thread;
+
 public class Downloader implements Runnable, Remote {
     private QueueInterface urlqueue;
     private final String downloaderId;
     private IndexStorageInterface indexStorage;
     private boolean running;
+    private String MULTICAST_ADDRESS = "224.3.2.1";
+    private int PORT = 4321;
+    private long SLEEP_TIME = 1000;
 
     public Downloader(String downloaderId) {
         this.downloaderId = downloaderId;
@@ -68,28 +79,15 @@ public class Downloader implements Runnable, Remote {
         }
     }
 
-    public boolean connectBarrel(String url) throws RemoteException {
-        System.out.println("Downloader " + downloaderId + " connecting to " + url);
-
-        try {
-            this.indexStorage = (IndexStorageInterface) Naming.lookup(url);
-            this.indexStorage.callback(this.toString());
-            return true;
-        } catch (NotBoundException | MalformedURLException | RemoteException e) {
-            System.out.println("Downloader " + downloaderId + " failed to connect to " + url);
-            return false;
-        }
-    }
-
     public void stop() {
         this.running = false;
     }
 
     public void start() {
         if (!running) {
-            Thread t = new Thread(this);
-            t.setName("thread_" + downloaderId);
-            t.start();
+            Thread downloader = new Thread(this);
+            downloader.setName("DownloaderId" + downloaderId);
+            downloader.start();
         }
     }
 
@@ -103,23 +101,38 @@ public class Downloader implements Runnable, Remote {
             e.printStackTrace();
         }
 
-        while (this.running) {
-            try {
-                Thread.sleep(1000);
+        MulticastSocket socket = null;
+        long messageId = 0;
+        System.out.println("Downloader " + this.downloaderId + " is running...");
 
-                String url = (String) urlqueue.dequeue();
-                if (url != null) {
-                    System.out.println("Downloader " + this.downloaderId + " is indexing url " + url);
-                    indexURL(url);
+        try {
+            socket = new MulticastSocket();
+
+            while (this.running) {
+                String message = "Downloader " + this.downloaderId + " is alive" + messageId++;
+                byte[] buffer = message.getBytes();
+
+                InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, PORT);
+
+                socket.send(packet);
+
+                try {
+                    Thread.sleep(SLEEP_TIME);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            } catch (RemoteException e) {
-                System.out.println("Downloader " + this.downloaderId + " failed to dequeue url");
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                // Nothing happens
             }
+        } catch (RemoteException e) {
+            System.out.println("Downloader " + this.downloaderId + " failed to dequeue url");
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+    }
 
-        System.out.println("Downloader " + this.downloaderId + " is stopping...");
+    public static void main(String[] args) {
+        Downloader downloader = new Downloader("1");
+        downloader.start();
     }
 }
