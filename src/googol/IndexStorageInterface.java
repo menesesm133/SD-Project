@@ -2,7 +2,9 @@ package googol;
 
 import java.rmi.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 public interface IndexStorageInterface extends Remote {
     public void addUrlsWord(String word, HashSet<String> urls) throws RemoteException;
@@ -20,4 +22,14 @@ public interface IndexStorageInterface extends Remote {
     public ArrayList<String> urlImportance() throws RemoteException;
 
     public int getId() throws RemoteException;
+
+    public Map<String, Integer> getWordCount();
+
+    public HashSet<URLContent> getContent();
+
+    public HashMap<String, HashSet<String>> getUrls();
+
+    public HashMap<String, HashSet<String>> getUrlsWord();
+
+    public Map<String, Integer> getUrlCount();
 }

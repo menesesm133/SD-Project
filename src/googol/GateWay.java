@@ -1,6 +1,7 @@
 package googol;
 
 import java.rmi.registry.LocateRegistry;
+import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -11,17 +12,25 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
     static IndexStorageInterface indexStorage;
     static ArrayList<IndexStorage> storages;
 
-
     protected GateWay() throws RemoteException {
         super();
-        ArrayList<IndexStorage> storages = new ArrayList<IndexStorage>();
         // TODO Auto-generated constructor stub
     }
 
-    public int subscribeStorage() throws RemoteException {
-        storages.add(new IndexStorage());
-        int index = storages.size() - 1;
+    public int subscribeStorage() throws RemoteException, MalformedURLException, NotBoundException {
+        int index = storages.size();
+        storages.add((IndexStorage) Naming.lookup("rmi://localhost/storage" + index));
+        System.out.println("Subscribed to storage " + index);
         return index;
+    }
+
+    public void updatestorages() {
+        for (IndexStorage storage : storages) {
+            if (storage.isupdated()) {
+                storage.updateStorage(indexStorage.getWordCount(), indexStorage.getContent(), indexStorage.getUrls(),
+                        indexStorage.getUrlsWord(), indexStorage.getUrlCount());
+            }
+        }
     }
 
     public void subscribeuser(String name, ClientInterface c) {
