@@ -10,9 +10,13 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 
-import java.rmi.server.UnicastRemoteObject;
 import java.rmi.*;
+import java.rmi.server.UnicastRemoteObject;
 import java.rmi.registry.LocateRegistry;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 
 public class IndexStorage extends UnicastRemoteObject implements IndexStorageInterface {
     private String word;
@@ -24,6 +28,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     private final Map<String, Integer> urlCount;
     private static int idCounter = 0;
     private final int id;
+    private String database = "./database/database.txt";
 
     public IndexStorage(String name) throws RemoteException {
         this.id = idCounter++;
@@ -33,6 +38,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         this.urls = new HashMap<>();
         this.urlsWord = new HashMap<>();
         this.urlCount = new HashMap<>();
+        this.database = "./database" + name + ".txt";
     }
 
     public void addUrlsWord(String word, HashSet<String> urls) {
@@ -150,6 +156,24 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
 
     public int getId() {
         return this.id;
+    }
+
+    public void writeDatabase() {
+        try {
+            FileWriter write = new FileWriter(new File(database));
+            BufferedWriter  writer = new BufferedWriter(write);
+
+            for (URLContent c : content) {
+                writer.write(c.url + "|");
+                writer.write(c.title + "|");
+                writer.write(c.text + "|");
+                writer.write(urls.get(c.url).toString() + ", ");
+            }
+
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) throws RemoteException {
