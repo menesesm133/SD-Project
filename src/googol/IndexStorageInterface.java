@@ -22,4 +22,6 @@ public interface IndexStorageInterface extends Remote {
     public void addContent(String title, String text, String url, HashSet<String> urls) throws RemoteException;
 
     public ArrayList<String> urlImportance() throws RemoteException;
+
+    public int getId() throws RemoteException;
 }

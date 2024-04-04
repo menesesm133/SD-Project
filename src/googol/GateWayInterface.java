@@ -1,4 +1,5 @@
 package googol;
+
 import java.rmi.*;
 
 public interface GateWayInterface extends Remote {

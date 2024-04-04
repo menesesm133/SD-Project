@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -26,7 +25,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     private static int idCounter = 0;
     private final int id;
 
-    public IndexStorage() throws RemoteException {
+    public IndexStorage(String name) throws RemoteException {
         this.id = idCounter++;
         this.wordCount = new HashMap<>();
         this.callback = new ArrayList<>();
@@ -138,6 +137,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 System.out.println("Invalid page number");
             }
         }
+        scanner.close();
     }
 
     public void callback(String downloader) {
@@ -146,6 +146,10 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
 
     public String getCallback() throws RemoteException {
         return this.callback.toString();
+    }
+
+    public int getId() {
+        return this.id;
     }
 
     public static void main(String[] args) throws RemoteException {
