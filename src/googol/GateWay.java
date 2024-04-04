@@ -3,18 +3,28 @@ package googol;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 
 public class GateWay extends UnicastRemoteObject implements GateWayInterface {
     static ClientInterface client;
     static QueueInterface queueInterface;
     static IndexStorageInterface indexStorage;
+    static ArrayList<IndexStorage> storages;
+
 
     protected GateWay() throws RemoteException {
         super();
+        ArrayList<IndexStorage> storages = new ArrayList<IndexStorage>();
         // TODO Auto-generated constructor stub
     }
 
-    public void subscribe(String name, ClientInterface c) {
+    public int subscribeStorage() throws RemoteException {
+        storages.add(new IndexStorage());
+        int index = storages.size() - 1;
+        return index;
+    }
+
+    public void subscribeuser(String name, ClientInterface c) {
         try {
             System.out.println("Subscribing " + name);
             client = c;

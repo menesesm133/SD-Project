@@ -110,7 +110,7 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
             System.out.println("Conectando ao servidor...");
             GateWayInterface gateway = (GateWayInterface) Naming.lookup("rmi://localhost/gate");
             Client client = new Client();
-            gateway.subscribe(username, (ClientInterface) client);
+            gateway.subscribeuser(username, (ClientInterface) client);
             System.out.println("Client sent subscription request to server.\n");
             client.start(sc, gateway, username);
         } catch (RemoteException | MalformedURLException | NotBoundException e) {

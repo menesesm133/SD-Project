@@ -20,6 +20,7 @@ import java.io.FileWriter;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 
@@ -30,21 +31,21 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     private final HashMap<String, HashSet<String>> urls;
     private final HashMap<String, HashSet<String>> urlsWord;
     private final Map<String, Integer> urlCount;
-    private static int idCounter = 0;
-    private final int id;
-    private String database = "./database/database.txt";
+    private static int id;
+    private final boolean updated;
+    private static String database;
     private String MULTICAST_ADDRESS = "224.3.2.1";
     private int PORT = 4321;
+    public GateWayInterface gateway;
 
-    public IndexStorage(String name) throws RemoteException {
+    public IndexStorage() throws RemoteException {
         super();
-        this.id = idCounter++;
         this.wordCount = new HashMap<>();
         this.content = new HashSet<>();
         this.urls = new HashMap<>();
         this.urlsWord = new HashMap<>();
         this.urlCount = new HashMap<>();
-        this.database = "./database" + name + ".txt";
+        this.updated = true;
     }
 
     public void addUrlsWord(String word, HashSet<String> urls) {
@@ -208,7 +209,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
                 System.out.println("IndexStorage " + this.id + " received: " + new String(packet.getData()));
-                
+
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -219,9 +220,15 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         }
     }
 
-    public static void main(String[] args) throws RemoteException {
+    public static void main(String[] args) throws RemoteException, MalformedURLException, NotBoundException {
+
+        GateWayInterface gateway = (GateWayInterface) Naming.lookup("rmi://localhost/gate");
+        id = gateway.subscribeStorage();
+
+        database = "./database" + id + ".txt";
+
         System.out.println("Index Storage Barrels is starting...");
-        IndexStorage barrel = new IndexStorage("IndexStorageBarrel");
+        IndexStorage barrel = new IndexStorage();
         LocateRegistry.createRegistry(1099).rebind("IndexStorageBarrel", barrel);
 
         Thread barrelThread = new Thread();
