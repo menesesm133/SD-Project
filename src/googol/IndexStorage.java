@@ -161,13 +161,34 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     public void writeDatabase() {
         try {
             FileWriter write = new FileWriter(new File(database));
-            BufferedWriter  writer = new BufferedWriter(write);
+            BufferedWriter writer = new BufferedWriter(write);
 
             for (URLContent c : content) {
-                writer.write(c.url + "|");
-                writer.write(c.title + "|");
-                writer.write(c.text + "|");
-                writer.write(urls.get(c.url).toString() + ", ");
+                writer.write(c.url + "|" + c.title + "|" + c.text + "\n");
+            }
+
+            for (Map.Entry<String, Integer> entry : wordCount.entrySet()) {
+                writer.write(entry.getKey() + "|" + entry.getValue() + "\n");
+            }
+
+            for (Map.Entry<String, Integer> entry : urlCount.entrySet()) {
+                writer.write(entry.getKey() + "|" + entry.getValue() + "\n");
+            }
+
+            for (Map.Entry<String, HashSet<String>> entry : urls.entrySet()) {
+                writer.write(entry.getKey() + "|");
+
+                for (String url : entry.getValue()) {
+                    writer.write(url + ",");
+                }
+            }
+
+            for (Map.Entry<String, HashSet<String>> entry : urlsWord.entrySet()) {
+                writer.write(entry.getKey() + "|");
+                
+                for (String url : entry.getValue()) {
+                    writer.write(url + ",");
+                }
             }
 
             writer.close();
