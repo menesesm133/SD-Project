@@ -8,6 +8,6 @@ public interface GateWayInterface extends Remote {
 
     void indexUrl(String username, String url) throws RemoteException;
 
-    int subscribeStorage() throws RemoteException;
+    int subscribeStorage(IndexStorage baril) throws RemoteException;
 
 }

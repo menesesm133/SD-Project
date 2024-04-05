@@ -3,7 +3,6 @@ package googol;
 import java.rmi.*;
 import java.util.ArrayList;
 import java.util.HashSet;
-
 public interface IndexStorageInterface extends Remote {
     public void addUrlsWord(String word, HashSet<String> urls) throws RemoteException;
 

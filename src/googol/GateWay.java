@@ -1,6 +1,7 @@
 package googol;
 
 import java.rmi.registry.LocateRegistry;
+import java.io.IOException;
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -15,11 +16,21 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
     protected GateWay() throws RemoteException {
         super();
         ArrayList<IndexStorage> storages = new ArrayList<IndexStorage>();
-        // TODO Auto-generated constructor stub
+        try {
+
+            // indexStorage = new IndexStorage(""); to mt confuso ;(
+
+            queueInterface = new URLQueue("queue");
+            LocateRegistry.createRegistry(1100).rebind("queue", queueInterface);
+            LocateRegistry.createRegistry(1099).rebind("gate", this);
+            System.out.println("Gateway is ready.");
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
-    public int subscribeStorage() throws RemoteException {
-        storages.add(new IndexStorage());
+    public int subscribeStorage(IndexStorage baril) throws RemoteException {
+        storages.add(baril);
         int index = storages.size() - 1;
         return index;
     }
@@ -49,15 +60,8 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
 
     public static void main(String[] args) {
         try {
-
-            // indexStorage = new IndexStorage(""); to mt confuso ;(
-
-            queueInterface = new URLQueue("queue");
-            LocateRegistry.createRegistry(1100).rebind("queue", queueInterface);
-            GateWayInterface gateInterface = new GateWay();
-            LocateRegistry.createRegistry(1099).rebind("gate", gateInterface);
-            System.out.println("Gateway is ready.");
-        } catch (RemoteException e) {
+            GateWay gateway = new GateWay();
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

@@ -11,6 +11,8 @@ import java.util.HashSet;
 import java.util.StringTokenizer;
 
 import java.rmi.*;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -29,8 +31,16 @@ public class Downloader implements Runnable, Remote {
     private long SLEEP_TIME = 1000;
 
     public Downloader(String downloaderId) {
+        super();
         this.downloaderId = downloaderId;
         this.running = false;
+        
+        try {
+            Registry registry = LocateRegistry.getRegistry("localhost", 1100);
+            urlqueue = (QueueInterface) registry.lookup("queue");
+        } catch (RemoteException | NotBoundException e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean indexURL(String url) {
@@ -87,19 +97,12 @@ public class Downloader implements Runnable, Remote {
         if (!running) {
             Thread downloader = new Thread(this);
             downloader.setName("DownloaderId" + downloaderId);
-            downloader.start();
-        }
+            downloader.start();        }
     }
 
     @Override
     public void run() {
         this.running = true;
-
-        try {
-            urlqueue = (QueueInterface) Naming.lookup("rmi://localhost/queue");
-        } catch (MalformedURLException | RemoteException | NotBoundException e) {
-            e.printStackTrace();
-        }
 
         MulticastSocket socket = null;
         long messageId = 0;

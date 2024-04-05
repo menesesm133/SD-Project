@@ -13,14 +13,13 @@ import java.util.StringTokenizer;
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.registry.LocateRegistry;
-
+import java.rmi.registry.Registry;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 
@@ -46,6 +45,15 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         this.urlsWord = new HashMap<>();
         this.urlCount = new HashMap<>();
         this.updated = true;
+
+        try {
+            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+            gateway = (GateWayInterface) registry.lookup("gate");
+        } catch (RemoteException | NotBoundException e) {
+            e.printStackTrace();
+        }
+
+        id = gateway.subscribeStorage(this);
     }
 
     public void addUrlsWord(String word, HashSet<String> urls) {
@@ -154,7 +162,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     }
 
     public int getId() {
-        return this.id;
+        return id;
     }
 
     public void writeDatabase() {
@@ -208,7 +216,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 byte[] buffer = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
-                System.out.println("IndexStorage " + this.id + " received: " + new String(packet.getData()));
+                System.out.println("IndexStorage " + id + " received: " + new String(packet.getData()));
 
             }
         } catch (Exception e) {
@@ -220,17 +228,12 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         }
     }
 
-    public static void main(String[] args) throws RemoteException, MalformedURLException, NotBoundException {
-
-        GateWayInterface gateway = (GateWayInterface) Naming.lookup("rmi://localhost/gate");
-        id = gateway.subscribeStorage();
+    public static void main(String[] args) throws RemoteException {
 
         database = "./database" + id + ".txt";
 
         System.out.println("Index Storage Barrels is starting...");
-        IndexStorage barrel = new IndexStorage();
-        LocateRegistry.createRegistry(1099).rebind("IndexStorageBarrel", barrel);
-
+        
         Thread barrelThread = new Thread();
         barrelThread.start();
 
