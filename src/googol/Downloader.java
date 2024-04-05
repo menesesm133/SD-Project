@@ -25,7 +25,7 @@ public class Downloader implements Runnable, Remote {
     private QueueInterface urlqueue;
     private final String downloaderId;
     private IndexStorageInterface indexStorage;
-    private boolean running;
+    private volatile boolean running;
     private String MULTICAST_ADDRESS = "224.3.2.1";
     private int PORT = 4321;
     private long SLEEP_TIME = 1000;
@@ -34,7 +34,7 @@ public class Downloader implements Runnable, Remote {
         super();
         this.downloaderId = downloaderId;
         this.running = false;
-        
+
         try {
             Registry registry = LocateRegistry.getRegistry("localhost", 1100);
             urlqueue = (QueueInterface) registry.lookup("queue");
@@ -43,7 +43,7 @@ public class Downloader implements Runnable, Remote {
         }
     }
 
-    public boolean indexURL(String url) {
+    public String indexURL(String url, long messageId) {
         try {
             // Make the request to the URL
             Document doc = Jsoup.connect(url).get();
@@ -80,12 +80,16 @@ public class Downloader implements Runnable, Remote {
             }
 
             // Add the content to the index
-            indexStorage.addContent(title, text.toString(), url, linksList);
-            return true;
+            //indexStorage.addContent(title, text.toString(), url, linksList);
+
+            String message = "Message Id: " + messageId + "Title: " + title + "Text: " + text.toString()
+                     + "URL: " + url + "Links: " + linksList.toString();
+
+            return message;
 
         } catch (IOException e) {
             e.printStackTrace();
-            return false;
+            return "Error: Could not index URL.";
         }
     }
 
@@ -97,33 +101,39 @@ public class Downloader implements Runnable, Remote {
         if (!running) {
             Thread downloader = new Thread(this);
             downloader.setName("DownloaderId" + downloaderId);
-            downloader.start();        }
+            downloader.start();
+        }
     }
 
     @Override
     public void run() {
         this.running = true;
 
-        MulticastSocket socket = null;
         long messageId = 0;
         System.out.println("Downloader " + this.downloaderId + " is running...");
 
-        try {
-            socket = new MulticastSocket();
+        try (MulticastSocket socket = new MulticastSocket()) {
+            InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
+            socket.joinGroup(group);
 
-            while (this.running) {
-                String message = "Downloader " + this.downloaderId + " is alive" + messageId++;
-                byte[] buffer = message.getBytes();
+            String url;
+            while (true){
+                while ((url = urlqueue.dequeue()) != null) {
+                    String message = indexURL(url, messageId++);
 
-                InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, PORT);
+                    System.out.println("Downloader " + this.downloaderId + " is sending message: " + message);
 
-                socket.send(packet);
+                    DatagramPacket packet = new DatagramPacket(message.getBytes(), message.length(), group, PORT);
 
-                try {
-                    Thread.sleep(SLEEP_TIME);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    socket.send(packet);
+
+                    try {
+                        Thread.sleep(SLEEP_TIME);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    url = urlqueue.dequeue();
                 }
             }
         } catch (RemoteException e) {

@@ -14,12 +14,15 @@ import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 
@@ -35,7 +38,17 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     private static String database;
     private String MULTICAST_ADDRESS = "224.3.2.1";
     private int PORT = 4321;
-    public GateWayInterface gateway;
+    public static GateWayInterface gateway;
+
+    public IndexStorage() throws RemoteException, MalformedURLException {
+        super();
+        this.wordCount = new HashMap<>();
+        this.content = new HashSet<>();
+        this.urls = new HashMap<>();
+        this.urlsWord = new HashMap<>();
+        this.urlCount = new HashMap<>();
+        this.updated = true;
+    }
 
     public boolean isupdated() {
         return this.updated;
@@ -72,25 +85,6 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         this.urlCount.putAll(urlCount);
         this.updated = true;
 
-    }
-
-    public IndexStorage() throws RemoteException {
-        super();
-        this.wordCount = new HashMap<>();
-        this.content = new HashSet<>();
-        this.urls = new HashMap<>();
-        this.urlsWord = new HashMap<>();
-        this.urlCount = new HashMap<>();
-        this.updated = true;
-
-        try {
-            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
-            gateway = (GateWayInterface) registry.lookup("gate");
-        } catch (RemoteException | NotBoundException e) {
-            e.printStackTrace();
-        }
-
-        id = gateway.subscribeStorage(this);
     }
 
     public void addUrlsWord(String word, HashSet<String> urls) {
@@ -242,41 +236,45 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     }
 
     public void run() {
-        MulticastSocket socket = null;
-
-        try {
-            socket = new MulticastSocket(PORT);
-            InetAddress mcastaddr = InetAddress.getByName(MULTICAST_ADDRESS);
-            socket.joinGroup(new InetSocketAddress(mcastaddr, 0), NetworkInterface.getByIndex(0));
+        System.out.println("passou aqui");
+        try (MulticastSocket socket = new MulticastSocket(PORT)) {
+            InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
+            socket.joinGroup(new InetSocketAddress(group, 0), NetworkInterface.getByIndex(0));
+            System.out.println("Wainting for packets...");
 
             while (true) {
                 byte[] buffer = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
-                System.out.println("IndexStorage " + id + " received: " + new String(packet.getData()));
 
+                // String received = new String(packet.getData(), 0, packet.getLength());
+
+                System.out.println(
+                        "Received packet from " + packet.getAddress() + ":" + packet.getPort() + " with length "
+                                + packet.getLength() + " and content: " + new String(packet.getData()).trim());
+
+                System.out.println("IndexStorage " + id + " received: " + new String(packet.getData()));
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            if (socket != null) {
-                socket.close();
-            }
         }
     }
 
-    public static void main(String[] args) throws RemoteException {
-
-        database = "./database" + id + ".txt";
+    public static void main(String[] args) throws RemoteException, MalformedURLException {
 
         System.out.println("Index Storage Barrels is starting...");
-        
-        Thread barrelThread = new Thread();
-        barrelThread.start();
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Press any key to stop IndexStorageBarrel...");
-        scanner.nextLine();
-        scanner.close();
+        IndexStorage barrel = new IndexStorage();
+
+        // try {
+        //     Registry registry = LocateRegistry.getRegistry("localhost", 1098);
+        //     gateway = (GateWayInterface) registry.lookup("baril");
+        //     id = gateway.subscribeStorage(barrel);
+        //     database = "./database" + id + ".txt";
+        // } catch (RemoteException | NotBoundException e) {
+        //     e.printStackTrace();
+        // }
+
+        barrel.run();
     }
 }

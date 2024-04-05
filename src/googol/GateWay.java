@@ -14,7 +14,7 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
 
     protected GateWay() throws RemoteException {
         super();
-        ArrayList<IndexStorage> storages = new ArrayList<IndexStorage>();
+        storages = new ArrayList<IndexStorage>();
         try {
 
             // indexStorage = new IndexStorage(""); to mt confuso ;(
@@ -22,6 +22,7 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
             queueInterface = new URLQueue("queue");
             LocateRegistry.createRegistry(1100).rebind("queue", queueInterface);
             LocateRegistry.createRegistry(1099).rebind("gate", this);
+            LocateRegistry.createRegistry(1098).rebind("baril", this);
             System.out.println("Gateway is ready.");
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -29,12 +30,13 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
     }
 
     public int subscribeStorage(IndexStorage baril) throws RemoteException {
+        System.out.println("Subscribing storage");
         storages.add(baril);
         int index = storages.size() - 1;
         return index;
     }
 
-    public void updatestorages() {
+    public void updatestorages() throws RemoteException {
         for (IndexStorage storage : storages) {
             if (storage.isupdated()) {
                 storage.updateStorage(indexStorage.getWordCount(), indexStorage.getContent(), indexStorage.getUrls(),
@@ -60,7 +62,6 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
         try {
             System.out.println(name + ">" + "Indexing URL: " + url);
             queueInterface.enqueue(url);
-            // TODO client.notify("URL indexed: " + url);
         } catch (RemoteException e) {
             e.printStackTrace();
         }

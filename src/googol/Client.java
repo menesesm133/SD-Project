@@ -9,7 +9,6 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 
     protected Client() throws RemoteException {
         super();
-        // TODO Auto-generated constructor stub
     }
 
     /**
@@ -106,7 +105,7 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
             System.out.println("Googol Client.... a iniciar.");
             Scanner sc = new Scanner(System.in);
             String username = new String();
-            username = args[0];
+            username = sc.next();
             System.out.println("Conectando ao servidor...");
             GateWayInterface gateway = (GateWayInterface) Naming.lookup("rmi://localhost/gate");
             Client client = new Client();

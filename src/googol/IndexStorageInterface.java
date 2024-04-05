@@ -23,13 +23,13 @@ public interface IndexStorageInterface extends Remote {
 
     public int getId() throws RemoteException;
 
-    public Map<String, Integer> getWordCount();
+    public Map<String, Integer> getWordCount() throws RemoteException;
 
-    public HashSet<URLContent> getContent();
+    public HashSet<URLContent> getContent() throws RemoteException;
 
-    public HashMap<String, HashSet<String>> getUrls();
+    public HashMap<String, HashSet<String>> getUrls() throws RemoteException;
 
-    public HashMap<String, HashSet<String>> getUrlsWord();
+    public HashMap<String, HashSet<String>> getUrlsWord() throws RemoteException;
 
-    public Map<String, Integer> getUrlCount();
+    public Map<String, Integer> getUrlCount() throws RemoteException;
 }
