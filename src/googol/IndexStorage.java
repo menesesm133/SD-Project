@@ -31,11 +31,48 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     private final HashMap<String, HashSet<String>> urlsWord;
     private final Map<String, Integer> urlCount;
     private static int id;
-    private final boolean updated;
+    private boolean updated;
     private static String database;
     private String MULTICAST_ADDRESS = "224.3.2.1";
     private int PORT = 4321;
     public GateWayInterface gateway;
+
+    public boolean isupdated() {
+        return this.updated;
+    }
+
+    public Map<String, Integer> getWordCount() {
+        return wordCount;
+    }
+
+    public HashSet<URLContent> getContent() {
+        return content;
+    }
+
+    public HashMap<String, HashSet<String>> getUrls() {
+        return urls;
+    }
+
+    public HashMap<String, HashSet<String>> getUrlsWord() {
+        return urlsWord;
+    }
+
+    public Map<String, Integer> getUrlCount() {
+        return urlCount;
+    }
+
+    public void updateStorage(Map<String, Integer> updatedWordCount, HashSet<URLContent> updatedcontent,
+            HashMap<String, HashSet<String>> updatedurls, HashMap<String, HashSet<String>> updatedurlsWord,
+            Map<String, Integer> urlCount) {
+
+        wordCount.putAll(updatedWordCount);
+        content.addAll(updatedcontent);
+        urls.putAll(updatedurls);
+        urlsWord.putAll(updatedurlsWord);
+        this.urlCount.putAll(urlCount);
+        this.updated = true;
+
+    }
 
     public IndexStorage() throws RemoteException {
         super();

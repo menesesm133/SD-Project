@@ -12,7 +12,6 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
     static IndexStorageInterface indexStorage;
     static ArrayList<IndexStorage> storages;
 
-
     protected GateWay() throws RemoteException {
         super();
         ArrayList<IndexStorage> storages = new ArrayList<IndexStorage>();
@@ -33,6 +32,15 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
         storages.add(baril);
         int index = storages.size() - 1;
         return index;
+    }
+
+    public void updatestorages() {
+        for (IndexStorage storage : storages) {
+            if (storage.isupdated()) {
+                storage.updateStorage(indexStorage.getWordCount(), indexStorage.getContent(), indexStorage.getUrls(),
+                        indexStorage.getUrlsWord(), indexStorage.getUrlCount());
+            }
+        }
     }
 
     public void subscribeuser(String name, ClientInterface c) {

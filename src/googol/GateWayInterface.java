@@ -1,5 +1,6 @@
 package googol;
 
+import java.net.MalformedURLException;
 import java.rmi.*;
 
 public interface GateWayInterface extends Remote {
