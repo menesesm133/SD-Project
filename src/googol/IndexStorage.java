@@ -236,7 +236,6 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     }
 
     public void run() {
-        System.out.println("passou aqui");
         try (MulticastSocket socket = new MulticastSocket(PORT)) {
             InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
             socket.joinGroup(new InetSocketAddress(group, 0), NetworkInterface.getByIndex(0));
@@ -247,7 +246,16 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
 
-                // String received = new String(packet.getData(), 0, packet.getLength());
+                String received = new String(packet.getData(), 0, packet.getLength());
+                String[] parts = received.split(";");
+
+                long messageId = Long.parseLong(parts[0].split(":")[1].trim());
+                String title = parts[1].split(":")[1].trim();
+                String text = parts[2].split(":")[1].trim();
+                String url = parts[3].split(":")[1].trim();
+                HashSet<String> links = new HashSet<>(Arrays.asList(parts[4].split(":")[1].trim().split(",")));
+
+                addContent(url, text, title, links);
 
                 System.out.println(
                         "Received packet from " + packet.getAddress() + ":" + packet.getPort() + " with length "

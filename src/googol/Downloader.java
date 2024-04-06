@@ -82,8 +82,8 @@ public class Downloader implements Runnable, Remote {
             // Add the content to the index
             //indexStorage.addContent(title, text.toString(), url, linksList);
 
-            String message = "Message Id: " + messageId + "Title: " + title + "Text: " + text.toString()
-                     + "URL: " + url + "Links: " + linksList.toString();
+            String message = "Message Id: " + messageId + "; Title: " + title + "; Text: " + text.toString()
+                     + "; URL: " + url + "; Links: " + linksList.toString();
 
             return message;
 
