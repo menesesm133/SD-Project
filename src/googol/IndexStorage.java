@@ -8,21 +8,24 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import java.rmi.*;
+import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class IndexStorage extends UnicastRemoteObject implements IndexStorageInterface {
     private String word;
@@ -37,18 +40,29 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     private String MULTICAST_ADDRESS = "224.3.2.1";
     private int PORT = 4321;
     public static GateWayInterface gateway;
+    private long messageId;
+    private long lastmessageId;
+    public static IndexStorage storage;
+    private Set<String> ignoreWords;
 
-    public IndexStorage() throws RemoteException, MalformedURLException {
+    public IndexStorage() throws NotBoundException, IOException {
         super();
+        ignoreWords = new HashSet<>(Files.readAllLines(Paths.get("ignorewords.txt")));
         this.wordCount = new HashMap<>();
         this.content = new HashSet<>();
         this.urls = new HashMap<>();
         this.urlsWord = new HashMap<>();
         this.urlCount = new HashMap<>();
         this.updated = true;
+        lastmessageId = 0;
+        gateway = (GateWayInterface) Naming.lookup("rmi://localhost:1099/gate");
+
     }
 
-    public boolean isupdated() {
+
+    
+
+    public boolean isupdated() throws RemoteException {
         return this.updated;
     }
 
@@ -82,7 +96,11 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         urlsWord.putAll(updatedurlsWord);
         this.urlCount.putAll(urlCount);
         this.updated = true;
+        System.out.println("Storage " + id + " updated");
+    }
 
+    public int getId() {
+        return id;
     }
 
     public HashSet<String> searchWord(String token) {
@@ -91,21 +109,25 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
 
     public HashSet<String> search(String word) {
         StringTokenizer token = new StringTokenizer(word, " ,:/.?'_");
-        HashSet<String> next = searchWord(token.nextToken());
-
-        if (next == null)
-            return null;
-
+        HashSet<String> next = null;
         while (token.hasMoreElements()) {
-            HashSet<String> tokens = searchWord(token.nextToken());
-            tokens.retainAll(next);
-
-            if (tokens.size() == 0)
+            String nextToken = token.nextToken();
+            if (ignoreWords.contains(nextToken) && token.countTokens() > 1) {
+                continue;
+            }
+            HashSet<String> tokens = searchWord(nextToken);
+            if (tokens == null) {
                 return null;
-
-            next = tokens;
+            }
+            if (next == null) {
+                next = tokens;
+            } else {
+                next.retainAll(tokens);
+                if (next.size() == 0) {
+                    return null;
+                }
+            }
         }
-
         return next;
     }
 
@@ -149,49 +171,6 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         }
 
         return importantUrls;
-    }
-
-    public void printContent(String key) throws RemoteException {
-        List<String> results = new ArrayList<>();
-        search(key).forEach(url -> {
-            content.stream().filter(c -> c.url.equals(url)).forEach(c -> {
-                String[] words = c.text.split("\\s+");
-                for (int i = 0; i < words.length; i++) {
-                    if (words[i].equals(key)) {
-                        int start = Math.max(0, i - 7);
-                        int end = Math.min(words.length, i + 8);
-                        String context = String.join(" ", Arrays.copyOfRange(words, start, end));
-                        results.add("Title: " + c.title + "\n" +
-                                "URL: " + c.url + "\n" +
-                                "Text: " + context + "\n" +
-                                "Links: " + urls.get(c.url) + "\n");
-                    }
-                }
-            });
-        });
-        Scanner scanner = new Scanner(System.in);
-        int pageSize = 10;
-        while (true) {
-            System.out.println("Enter page number (0 to quit):");
-            int page = scanner.nextInt();
-            if (page == 0) {
-                break;
-            }
-            int start = (page - 1) * pageSize;
-            if (start < results.size()) {
-                int end = Math.min(start + pageSize, results.size());
-                for (int i = start; i < end; i++) {
-                    System.out.println(results.get(i));
-                }
-            } else {
-                System.out.println("Invalid page number");
-            }
-        }
-        scanner.close();
-    }
-
-    public int getId() {
-        return id;
     }
 
     public void writeDatabase() {
@@ -247,7 +226,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 String received = new String(packet.getData(), 0, packet.getLength());
                 String[] parts = received.split(";");
 
-                long messageId = Long.parseLong(parts[0].split(":")[1].trim());
+                messageId = Long.parseLong(parts[0].split(":")[1].trim());
                 String title = parts[1].split(":")[1].trim();
                 String text = parts[2].split(":")[1].trim();
                 String url = parts[3].split(":")[1].trim();
@@ -266,26 +245,29 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                                 + packet.getLength() + " and content: " + new String(packet.getData()).trim());
 
                 System.out.println("IndexStorage " + id + " received: " + new String(packet.getData()));
+
+                if (messageId - lastmessageId > 2) {
+
+                    gateway.updatestorages(id);
+
+                }
+
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public static void main(String[] args) throws RemoteException, MalformedURLException {
+    public static void main(String[] args) throws NotBoundException, IOException {
 
         System.out.println("Index Storage Barrels is starting...");
-
         IndexStorage barrel = new IndexStorage();
+        id = gateway.subscribeStorage(barrel);
 
-        // try {
-        //     Registry registry = LocateRegistry.getRegistry("localhost", 1098);
-        //     gateway = (GateWayInterface) registry.lookup("baril");
-        //     id = gateway.subscribeStorage(barrel);
-        //     database = "./database" + id + ".txt";
-        // } catch (RemoteException | NotBoundException e) {
-        //     e.printStackTrace();
-        // }
+        database = "database" + id + ".txt";
+        storage = new IndexStorage();
+        LocateRegistry.createRegistry(1101 + id);
+        Naming.rebind("//localhost/IndexStorage" + id, storage);
 
         barrel.run();
     }

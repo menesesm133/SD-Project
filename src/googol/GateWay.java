@@ -10,37 +10,42 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
     static ClientInterface client;
     static QueueInterface queueInterface;
     static IndexStorageInterface indexStorage;
-    static ArrayList<IndexStorage> storages;
+    static ArrayList<IndexStorageInterface> storages;
 
     protected GateWay() throws RemoteException {
         super();
-        storages = new ArrayList<IndexStorage>();
         try {
 
             // indexStorage = new IndexStorage(""); to mt confuso ;(
 
+            storages = new ArrayList<IndexStorageInterface>();
             queueInterface = new URLQueue("queue");
             LocateRegistry.createRegistry(1100).rebind("queue", queueInterface);
             LocateRegistry.createRegistry(1099).rebind("gate", this);
-            LocateRegistry.createRegistry(1098).rebind("baril", this);
             System.out.println("Gateway is ready.");
         } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
 
-    public int subscribeStorage(IndexStorage baril) throws RemoteException {
-        System.out.println("Subscribing storage");
-        storages.add(baril);
-        int index = storages.size() - 1;
-        return index;
+    public int subscribeStorage(IndexStorageInterface storage) {
+        try {
+            storages.add(storage);
+            return storages.indexOf(storage);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1;
+        }
     }
 
-    public void updatestorages() throws RemoteException {
-        for (IndexStorage storage : storages) {
+    public void updatestorages(int id) throws RemoteException {
+
+        indexStorage = storages.get(id);
+
+        for (IndexStorageInterface storage : storages) {
             if (storage.isupdated()) {
-                storage.updateStorage(indexStorage.getWordCount(), indexStorage.getContent(), indexStorage.getUrls(),
-                        indexStorage.getUrlsWord(), indexStorage.getUrlCount());
+                indexStorage.updateStorage(storage.getWordCount(), storage.getContent(), storage.getUrls(),
+                        storage.getUrlsWord(), storage.getUrlCount());
             }
         }
     }
@@ -68,10 +73,7 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
     }
 
     public static void main(String[] args) {
-        try {
-            GateWay gateway = new GateWay();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
     }
+
 }

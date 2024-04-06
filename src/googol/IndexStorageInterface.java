@@ -7,11 +7,8 @@ import java.util.HashSet;
 import java.util.Map;
 
 public interface IndexStorageInterface extends Remote {
-    public void printContent(String key) throws RemoteException;
 
     public HashSet<String> search(String word) throws RemoteException;
-
-    public HashSet<String> searchWord(String word) throws RemoteException;
 
     public String getWord() throws RemoteException;
 
@@ -32,4 +29,10 @@ public interface IndexStorageInterface extends Remote {
     public Map<String, Integer> getUrlCount() throws RemoteException;
 
     public void addUrlsWord(String word, String url) throws RemoteException;
+
+    public boolean isupdated() throws RemoteException;
+
+    public void updateStorage(Map<String, Integer> wordCount, HashSet<URLContent> content,
+            HashMap<String, HashSet<String>> urls, HashMap<String, HashSet<String>> urlsWord,
+            Map<String, Integer> urlCount) throws RemoteException;
 }

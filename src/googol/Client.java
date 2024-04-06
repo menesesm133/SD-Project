@@ -43,29 +43,6 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
         return sc.nextInt();
     }
 
-    public static String register() {
-        String username = new String();
-        System.out.println("Insira o seu nome de utilizador:");
-        Scanner sc = new Scanner(System.in);
-        username = sc.next();
-        if (username.isEmpty()) {
-            System.out.println("Nome de utilizador inválido.");
-            register();
-        } else if (isUsernameTaken(username)) {
-            System.out.println("Nome de utilizador já está em uso.");
-            register();
-        }
-
-        return username;
-    }
-
-    private static boolean isUsernameTaken(String username) {
-        // Check if the username is already taken
-        // Return true if it is taken, false otherwise
-        // You can implement your own logic here
-        return false;
-    }
-
     public void start(Scanner sc, GateWayInterface gateway, String username)
             throws RemoteException, NotBoundException, MalformedURLException {
         int opcao = 0;
@@ -118,4 +95,4 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
     }
 }
 
-//https://www.uc.pt
+// https://www.uc.pt
