@@ -73,7 +73,11 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
     }
 
     public static void main(String[] args) {
-
+        try {
+            GateWay gate = new GateWay();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
 }
