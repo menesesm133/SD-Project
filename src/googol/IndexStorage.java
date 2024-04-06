@@ -12,8 +12,6 @@ import java.util.StringTokenizer;
 
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -87,18 +85,6 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
 
     }
 
-    public void addUrlsWord(String word, HashSet<String> urls) {
-        HashSet<String> nameUrls = urlsWord.get(word);
-
-        if (nameUrls == null) { // If the word is not in the index
-            nameUrls = new HashSet<String>();
-            urlsWord.put(word, nameUrls);
-        }
-
-        nameUrls.addAll(urls);
-        wordCount.merge(word, urls.size(), Integer::sum);
-    }
-
     public HashSet<String> searchWord(String token) {
         return urlsWord.get(token);
     }
@@ -135,6 +121,18 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         this.content.add(content);
         this.urls.put(url, urls);
         urlCount.merge(url, urls.size(), Integer::sum);
+    }
+
+    public void addUrlsWord(String word, String url) {
+        HashSet<String> nameUrls = urlsWord.get(word);
+
+        if (nameUrls == null) { // If the word is not in the index
+            nameUrls = new HashSet<String>();
+            urlsWord.put(word, nameUrls);
+        }
+
+        nameUrls.add(url);
+        wordCount.merge(word, 1, Integer::sum);
     }
 
     // Por aquilo que eu vi isto deve funceminar, mas ainda não testei.
@@ -256,6 +254,12 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 HashSet<String> links = new HashSet<>(Arrays.asList(parts[4].split(":")[1].trim().split(",")));
 
                 addContent(url, text, title, links);
+
+                addUrlsWord(title, url);
+
+                for (String word : text.split("\\s+")) {
+                    addUrlsWord(word, url);
+                }
 
                 System.out.println(
                         "Received packet from " + packet.getAddress() + ":" + packet.getPort() + " with length "
