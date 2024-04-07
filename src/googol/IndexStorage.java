@@ -99,36 +99,43 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     }
 
     public HashSet<String> searchWord(String token) {
+        System.out.println("Searching for: " + urlsWord.get(token));
         return urlsWord.get(token);
+
     }
 
     public ArrayList<String> search(String word) {
         StringTokenizer token = new StringTokenizer(word, " ,:/.?'_");
         HashSet<String> next = null;
+        ArrayList<String> vazia = new ArrayList<String>();
         while (token.hasMoreElements()) {
             String nextToken = token.nextToken();
+            System.out.println(nextToken);
             if (ignoreWords.contains(nextToken) && token.countTokens() > 1) {
                 continue;
             }
             HashSet<String> tokens = searchWord(nextToken);
+            System.out.println("TOKENS: " + tokens);
             if (tokens == null) {
-                return null;
+                System.out.println("Token not found");
+                return vazia;
             }
             if (next == null) {
                 next = tokens;
             } else {
                 next.retainAll(tokens);
                 if (next.size() == 0) {
-                    return null;
+                    return vazia;
                 }
             }
         }
         if (next != null) {
             ArrayList<String> importantUrls = urlImportance();
+            System.out.println("IMPORTANT: " + importantUrls);
             importantUrls.retainAll(next);
             return importantUrls;
         }
-        return null;
+        return vazia;
     }
 
     // Por aquilo que eu vi isto deve funceminar, mas ainda não testei.
@@ -139,16 +146,21 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         ArrayList<String> importantUrls = new ArrayList<>();
 
         for (Map.Entry<String, Integer> entry : sortedUrls) {
-            if (entry.getValue() > 1) {
+            if (entry.getValue() >= 1) {
                 importantUrls.add(entry.getKey());
             }
         }
+
+        System.out.println("importantUrls: " + importantUrls);
 
         return importantUrls;
     }
 
     public List<String> printSearchWords(String keys) {
         ArrayList<String> urls = search(keys);
+
+        System.out.println(urls);
+
         if (urls == null) {
             return null;
         }
@@ -168,6 +180,8 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 }
             }
         }
+
+        System.out.println("Results: " + results.size());
 
         return results;
     }
@@ -256,11 +270,11 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 String received = new String(packet.getData(), 0, packet.getLength());
                 String[] parts = received.split(";");
 
-                messageId = Long.parseLong(parts[0].split(":")[1].trim());
-                String title = parts[1].split(":")[1].trim();
-                String text = parts[2].split(":")[1].trim();
-                String url = parts[3].split(":")[1].trim();
-                HashSet<String> links = new HashSet<>(Arrays.asList(parts[4].split(":")[1].trim().split(",")));
+                messageId = Long.parseLong(parts[0].split("\\|")[1].trim());
+                String title = parts[1].split("\\|")[1].trim();
+                String text = parts[2].split("\\|")[1].trim();
+                String url = parts[3].split("\\|")[1].trim();
+                HashSet<String> links = new HashSet<>(Arrays.asList(parts[4].split("\\|")[1].trim().split(",")));
 
                 addContent(url, text, title, links);
 
@@ -268,6 +282,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
 
                 for (String word : text.split("\\s+")) {
                     addUrlsWord(word, url);
+                    System.out.println("Word: " + word + " URL: " + searchWord(word));
                 }
 
                 System.out.println(

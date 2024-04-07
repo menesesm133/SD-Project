@@ -64,16 +64,19 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
     }
 
     public List<String> searchWord(String words) throws RemoteException {
-        List results = new ArrayList<String>();
-
+        List<String> results = new ArrayList<>();
+        System.out.println("Searching for: " + words);
         for (IndexStorageInterface storage : storages) {
             if (storage.isupdated()) {
-                results.addAll(storage.printSearchWords(words));
+                System.out.println("Searching in storage" + storages.indexOf(storage));
+                List<String> storageResults = storage.printSearchWords(words);
+                if (storageResults != null) {
+                    results.addAll(storageResults);
+                }
             }
         }
-
+        System.out.println("Results: " + results.size());
         return results;
-
     }
 
     public void indexUrl(String name, String url) {
