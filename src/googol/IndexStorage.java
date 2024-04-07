@@ -297,6 +297,8 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
 
                 }
 
+                writeDatabase();
+
             }
         } catch (Exception e) {
             e.printStackTrace();
