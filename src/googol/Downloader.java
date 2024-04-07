@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.MulticastSocket;
 
 import java.util.HashSet;
@@ -105,6 +104,7 @@ public class Downloader implements Runnable, Remote {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void run() {
         this.running = true;
