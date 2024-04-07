@@ -1,9 +1,9 @@
 package googol;
 
 import java.rmi.registry.LocateRegistry;
-import java.io.IOException;
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
+
 import java.util.ArrayList;
 
 public class GateWay extends UnicastRemoteObject implements GateWayInterface {
