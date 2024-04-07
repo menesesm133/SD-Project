@@ -104,7 +104,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     }
 
     public HashSet<String> searchWord(String token) {
-        return urlsWord.get(token);
+        return urlsWord.keySet().contains(token) ? urlsWord.get(token) : null;
     }
 
     public HashSet<String> search(String word) {
@@ -212,6 +212,36 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         }
     }
 
+    public void readDataBase() {
+        try {
+            Scanner scanner = new Scanner(new File(database));
+
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String[] parts = line.split("\\|");
+
+                if (parts.length == 2) {
+                    wordCount.put(parts[0], Integer.parseInt(parts[1]));
+                } else if (parts.length == 3) {
+                    URLContent c = new URLContent();
+                    c.url = parts[0];
+                    c.title = parts[1];
+                    c.text = parts[2];
+                    content.add(c);
+                } else if (parts.length == 1) {
+                    urlCount.put(parts[0], Integer.parseInt(parts[1]));
+                } else {
+                    HashSet<String> urls = new HashSet<>(Arrays.asList(parts[1].split(",")));
+                    urlsWord.put(parts[0], urls);
+                }
+            }
+
+            scanner.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void run() {
         try (MulticastSocket socket = new MulticastSocket(PORT)) {
             InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
@@ -252,6 +282,8 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
 
                 }
 
+                writeDatabase();
+
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -263,6 +295,8 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         System.out.println("Index Storage Barrels is starting...");
         IndexStorage barrel = new IndexStorage();
         id = gateway.subscribeStorage(barrel);
+
+        barrel.readDataBase();
 
         database = "database" + id + ".txt";
         storage = new IndexStorage();
