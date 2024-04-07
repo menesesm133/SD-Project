@@ -2,7 +2,6 @@ package googol;
 
 import java.rmi.*;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -41,4 +40,6 @@ public interface IndexStorageInterface extends Remote {
     public void run() throws RemoteException;
 
     public List<String> printSearchWords(String words) throws RemoteException;
+
+    public void readDataBase() throws RemoteException;
 }

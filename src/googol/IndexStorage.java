@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import java.rmi.*;
-import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 
 import java.io.BufferedWriter;
@@ -360,9 +359,9 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     }
 
     public static void main(String[] args) throws NotBoundException, IOException, InterruptedException {
-
         System.out.println("Index Storage Barrels is starting...");
         IndexStorageInterface barrel = new IndexStorage();
+        barrel.readDataBase();
         id = gateway.subscribeStorage(barrel);
         database = "database" + id + ".txt";
         barrel.run();
@@ -371,7 +370,6 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
 
     @Override
     public String getWord() throws RemoteException {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getWord'");
     }
 }
