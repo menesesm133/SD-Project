@@ -13,41 +13,31 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
         super();
     }
 
-    /**
-     * As opções disponíveis são:
-     *
-     * Indexar um novo URL: permite que o usuário insira manualmente um URL para ser
-     * indexado pelo módulo de busca remoto.
-     * Consultar lista de páginas com ligação para uma página específica: permite
-     * que o usuário digite os termos de pesquisa e recebe uma lista de páginas que
-     * contêm links para a página procurada.
-     * Página de administração atualizada em tempo real: permite que o usuário
-     * visualize as 10 pesquisas mais comuns realizadas pelos usuários.
-     * Sair: fecha o programa.
-     */
-
     public void printResults(List<String> results) {
         Scanner scanner = new Scanner(System.in);
         int page = 0;
         while (true) {
-            int start = page * 10;
+            int start = page * 10 * 4;
             if (start >= results.size()) {
                 System.out.println("No more results.");
                 break;
             }
-            int end = Math.min(start + 10, results.size());
+            int end = Math.min(start + 10 * 4, results.size());
             List<String> sublist = results.subList(start, end);
-            for (String result : sublist) {
-                System.out.println(result);
+            for (int i = 0; i < sublist.size(); i += 4) {
+                for (int j = 0; j < 4; j++) {
+                    if (i + j < sublist.size()) {
+                        System.out.println(sublist.get(i + j));
+                    }
+                }
+                System.out.println();
             }
             System.out.println("\nEnter the number of the next page or 0 to exit:");
             page = scanner.nextInt();
             if (page == 0) {
                 break;
             }
-            page--;
         }
-        scanner.close();
     }
 
     public static void menu() {
@@ -124,5 +114,3 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
         }
     }
 }
-
-// https://www.uc.pt

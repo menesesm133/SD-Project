@@ -99,7 +99,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     }
 
     public HashSet<String> searchWord(String token) {
-        System.out.println("Searching for: " + urlsWord.get(token));
+        // System.out.println("Searching for: " + urlsWord.get(token));
         return urlsWord.get(token);
 
     }
@@ -175,9 +175,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 String[] words = text.split("\\s+");
                 String limitedText = String.join(" ", Arrays.copyOfRange(words, 0, Math.min(words.length, 20)));
                 results.add("Text: " + limitedText);
-                if (results.size() % 10 == 9) {
-                    results.add("----------");
-                }
+                results.add("----------");
             }
         }
 
@@ -256,6 +254,36 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         }
     }
 
+    public void readDataBase() {
+        try {
+            Scanner scanner = new Scanner(new File(database));
+
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String[] parts = line.split("\\|");
+
+                if (parts.length == 2) {
+                    wordCount.put(parts[0], Integer.parseInt(parts[1]));
+                } else if (parts.length == 3) {
+                    URLContent c = new URLContent();
+                    c.url = parts[0];
+                    c.title = parts[1];
+                    c.text = parts[2];
+                    contents.add(c);
+                } else if (parts.length == 1) {
+                    urlCount.put(parts[0], Integer.parseInt(parts[1]));
+                } else {
+                    HashSet<String> urls = new HashSet<>(Arrays.asList(parts[1].split(",")));
+                    urlsWord.put(parts[0], urls);
+                }
+            }
+
+            scanner.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void run() throws RemoteException {
         try (MulticastSocket socket = new MulticastSocket(PORT)) {
             InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
@@ -270,11 +298,34 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 String received = new String(packet.getData(), 0, packet.getLength());
                 String[] parts = received.split(";");
 
-                messageId = Long.parseLong(parts[0].split("\\|")[1].trim());
-                String title = parts[1].split("\\|")[1].trim();
-                String text = parts[2].split("\\|")[1].trim();
-                String url = parts[3].split("\\|")[1].trim();
-                HashSet<String> links = new HashSet<>(Arrays.asList(parts[4].split("\\|")[1].trim().split(",")));
+                String[] splitParts = parts[0].split("\\|");
+                if (splitParts.length > 1) {
+                    messageId = Long.parseLong(splitParts[1].trim());
+                } else {
+                    // Handle the case where parts[0] doesn't contain "|"
+                    System.out.println("Invalid format: " + parts[0]);
+                }
+
+                String title = "";
+                String text = "";
+                String url = "";
+                HashSet<String> links = new HashSet<>();
+
+                if (parts[1].split("\\|").length > 1) {
+                    title = parts[1].split("\\|")[1].trim();
+                }
+
+                if (parts[2].split("\\|").length > 1) {
+                    text = parts[2].split("\\|")[1].trim();
+                }
+
+                if (parts[3].split("\\|").length > 1) {
+                    url = parts[3].split("\\|")[1].trim();
+                }
+
+                if (parts[4].split("\\|").length > 1) {
+                    links = new HashSet<>(Arrays.asList(parts[4].split("\\|")[1].trim().split(",")));
+                }
 
                 addContent(url, text, title, links);
 
@@ -285,19 +336,22 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                     System.out.println("Word: " + word + " URL: " + searchWord(word));
                 }
 
-                System.out.println(
-                        "Received packet from " + packet.getAddress() + ":" + packet.getPort() + " with length "
-                                + packet.getLength() + " and content: " + new String(packet.getData()).trim());
+                // System.out.println(
+                // "Received packet from " + packet.getAddress() + ":" + packet.getPort() + "
+                // with length "
+                // + packet.getLength() + " and content: " + new
+                // String(packet.getData()).trim());
 
-                System.out.println("IndexStorage " + id + " received: " + new String(packet.getData()));
+                // System.out.println("IndexStorage " + id + " received: " + new
+                // String(packet.getData()));
 
                 if (messageId - lastmessageId > 2) {
                     this.updated = false;
                     gateway.updatestorages(id);
 
                 }
-
-                writeDatabase();
+                lastmessageId = messageId;
+                // writeDatabase();
 
             }
         } catch (Exception e) {
