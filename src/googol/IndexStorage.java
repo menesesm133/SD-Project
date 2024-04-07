@@ -28,9 +28,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class IndexStorage extends UnicastRemoteObject implements IndexStorageInterface {
-    private String word;
     private final Map<String, Integer> wordCount;
-    private final HashSet<URLContent> content;
+    private final HashSet<URLContent> contents;
     private final HashMap<String, HashSet<String>> urls;
     private final HashMap<String, HashSet<String>> urlsWord;
     private final Map<String, Integer> urlCount;
@@ -42,25 +41,21 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     public static GateWayInterface gateway;
     private long messageId;
     private long lastmessageId;
-    public static IndexStorage storage;
     private Set<String> ignoreWords;
 
     public IndexStorage() throws NotBoundException, IOException {
         super();
-        ignoreWords = new HashSet<>(Files.readAllLines(Paths.get("ignorewords.txt")));
+        ignoreWords = new HashSet<>(Files.readAllLines(Paths.get(
+                "C:\\Users\\befel\\OneDrive\\Ambiente de Trabalho\\Bernardo\\Estudos\\SD\\ProjetoSD\\SD-Project\\src\\googol\\ignorewords.txt")));
         this.wordCount = new HashMap<>();
-        this.content = new HashSet<>();
+        this.contents = new HashSet<>();
         this.urls = new HashMap<>();
         this.urlsWord = new HashMap<>();
         this.urlCount = new HashMap<>();
         this.updated = true;
         lastmessageId = 0;
-        gateway = (GateWayInterface) Naming.lookup("rmi://localhost:1099/gate");
-
+        gateway = (GateWayInterface) Naming.lookup("rmi://localhost:1100/barrel");
     }
-
-
-    
 
     public boolean isupdated() throws RemoteException {
         return this.updated;
@@ -71,7 +66,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     }
 
     public HashSet<URLContent> getContent() {
-        return content;
+        return contents;
     }
 
     public HashMap<String, HashSet<String>> getUrls() {
@@ -91,7 +86,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
             Map<String, Integer> urlCount) {
 
         wordCount.putAll(updatedWordCount);
-        content.addAll(updatedcontent);
+        contents.addAll(updatedcontent);
         urls.putAll(updatedurls);
         urlsWord.putAll(updatedurlsWord);
         this.urlCount.putAll(urlCount);
@@ -107,7 +102,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         return urlsWord.get(token);
     }
 
-    public HashSet<String> search(String word) {
+    public ArrayList<String> search(String word) {
         StringTokenizer token = new StringTokenizer(word, " ,:/.?'_");
         HashSet<String> next = null;
         while (token.hasMoreElements()) {
@@ -128,33 +123,12 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 }
             }
         }
-        return next;
-    }
-
-    public String getWord() {
-        return word;
-    }
-
-    public void addContent(String url, String text, String title, HashSet<String> urls) {
-        URLContent content = new URLContent();
-        content.url = url;
-        content.title = title;
-        content.text = text;
-        this.content.add(content);
-        this.urls.put(url, urls);
-        urlCount.merge(url, urls.size(), Integer::sum);
-    }
-
-    public void addUrlsWord(String word, String url) {
-        HashSet<String> nameUrls = urlsWord.get(word);
-
-        if (nameUrls == null) { // If the word is not in the index
-            nameUrls = new HashSet<String>();
-            urlsWord.put(word, nameUrls);
+        if (next != null) {
+            ArrayList<String> importantUrls = urlImportance();
+            importantUrls.retainAll(next);
+            return importantUrls;
         }
-
-        nameUrls.add(url);
-        wordCount.merge(word, 1, Integer::sum);
+        return null;
     }
 
     // Por aquilo que eu vi isto deve funceminar, mas ainda não testei.
@@ -173,12 +147,68 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         return importantUrls;
     }
 
+    public List<String> printSearchWords(String keys) {
+        ArrayList<String> urls = search(keys);
+        if (urls == null) {
+            return null;
+        }
+
+        List<String> results = new ArrayList<>();
+        for (String url : urls) {
+            URLContent content = findContentByUrl(url);
+            if (content != null) {
+                results.add("Title: " + content.getTitle());
+                results.add("URL: " + content.getUrl());
+                String text = content.getText();
+                String[] words = text.split("\\s+");
+                String limitedText = String.join(" ", Arrays.copyOfRange(words, 0, Math.min(words.length, 20)));
+                results.add("Text: " + limitedText);
+                if (results.size() % 10 == 9) {
+                    results.add("----------");
+                }
+            }
+        }
+
+        return results;
+    }
+
+    private URLContent findContentByUrl(String url) {
+        for (URLContent content : contents) {
+            if (content.getUrl().equals(url)) {
+                return content;
+            }
+        }
+        return null;
+    }
+
+    public void addContent(String url, String text, String title, HashSet<String> urls) {
+        URLContent content = new URLContent();
+        content.url = url;
+        content.title = title;
+        content.text = text;
+        this.contents.add(content);
+        this.urls.put(url, urls);
+        urlCount.merge(url, urls.size(), Integer::sum);
+    }
+
+    public void addUrlsWord(String word, String url) {
+        HashSet<String> nameUrls = urlsWord.get(word);
+
+        if (nameUrls == null) { // If the word is not in the index
+            nameUrls = new HashSet<String>();
+            urlsWord.put(word, nameUrls);
+        }
+
+        nameUrls.add(url);
+        wordCount.merge(word, 1, Integer::sum);
+    }
+
     public void writeDatabase() {
         try {
             FileWriter write = new FileWriter(new File(database));
             BufferedWriter writer = new BufferedWriter(write);
 
-            for (URLContent c : content) {
+            for (URLContent c : contents) {
                 writer.write(c.url + "|" + c.title + "|" + c.text + "\n");
             }
 
@@ -212,7 +242,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         }
     }
 
-    public void run() {
+    public void run() throws RemoteException {
         try (MulticastSocket socket = new MulticastSocket(PORT)) {
             InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
             socket.joinGroup(new InetSocketAddress(group, 0), NetworkInterface.getByIndex(0));
@@ -247,7 +277,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 System.out.println("IndexStorage " + id + " received: " + new String(packet.getData()));
 
                 if (messageId - lastmessageId > 2) {
-
+                    this.updated = false;
                     gateway.updatestorages(id);
 
                 }
@@ -258,17 +288,19 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         }
     }
 
-    public static void main(String[] args) throws NotBoundException, IOException {
+    public static void main(String[] args) throws NotBoundException, IOException, InterruptedException {
 
         System.out.println("Index Storage Barrels is starting...");
-        IndexStorage barrel = new IndexStorage();
+        IndexStorageInterface barrel = new IndexStorage();
         id = gateway.subscribeStorage(barrel);
-
         database = "database" + id + ".txt";
-        storage = new IndexStorage();
-        LocateRegistry.createRegistry(1101 + id);
-        Naming.rebind("//localhost/IndexStorage" + id, storage);
-
         barrel.run();
+
+    }
+
+    @Override
+    public String getWord() throws RemoteException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getWord'");
     }
 }

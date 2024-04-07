@@ -2,13 +2,15 @@ package googol;
 
 import java.rmi.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 public interface IndexStorageInterface extends Remote {
 
-    public HashSet<String> search(String word) throws RemoteException;
+    public ArrayList<String> search(String word) throws RemoteException;
 
     public String getWord() throws RemoteException;
 
@@ -35,4 +37,8 @@ public interface IndexStorageInterface extends Remote {
     public void updateStorage(Map<String, Integer> wordCount, HashSet<URLContent> content,
             HashMap<String, HashSet<String>> urls, HashMap<String, HashSet<String>> urlsWord,
             Map<String, Integer> urlCount) throws RemoteException;
+
+    public void run() throws RemoteException;
+
+    public List<String> printSearchWords(String words) throws RemoteException;
 }

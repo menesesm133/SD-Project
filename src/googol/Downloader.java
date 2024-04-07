@@ -36,7 +36,7 @@ public class Downloader implements Runnable, Remote {
         this.running = false;
 
         try {
-            Registry registry = LocateRegistry.getRegistry("localhost", 1100);
+            Registry registry = LocateRegistry.getRegistry("localhost", 1098);
             urlqueue = (QueueInterface) registry.lookup("queue");
         } catch (RemoteException | NotBoundException e) {
             e.printStackTrace();
@@ -80,10 +80,10 @@ public class Downloader implements Runnable, Remote {
             }
 
             // Add the content to the index
-            //indexStorage.addContent(title, text.toString(), url, linksList);
+            // indexStorage.addContent(title, text.toString(), url, linksList);
 
             String message = "Message Id: " + messageId + "; Title: " + title + "; Text: " + text.toString()
-                     + "; URL: " + url + "; Links: " + linksList.toString();
+                    + "; URL: " + url + "; Links: " + linksList.toString();
 
             return message;
 
@@ -117,7 +117,7 @@ public class Downloader implements Runnable, Remote {
             socket.joinGroup(group);
 
             String url;
-            while (true){
+            while (true) {
                 while ((url = urlqueue.dequeue()) != null) {
                     String message = indexURL(url, messageId++);
 

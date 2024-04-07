@@ -3,9 +3,11 @@ package googol;
 import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.List;
 import java.util.Scanner;
 
 public class Client extends UnicastRemoteObject implements ClientInterface {
+    private static int id;
 
     protected Client() throws RemoteException {
         super();
@@ -23,6 +25,31 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
      * visualize as 10 pesquisas mais comuns realizadas pelos usuários.
      * Sair: fecha o programa.
      */
+
+    public void printResults(List<String> results) {
+        Scanner scanner = new Scanner(System.in);
+        int page = 0;
+        while (true) {
+            int start = page * 10;
+            if (start >= results.size()) {
+                System.out.println("No more results.");
+                break;
+            }
+            int end = Math.min(start + 10, results.size());
+            List<String> sublist = results.subList(start, end);
+            for (String result : sublist) {
+                System.out.println(result);
+            }
+            System.out.println("\nEnter the number of the next page or 0 to exit:");
+            page = scanner.nextInt();
+            if (page == 0) {
+                break;
+            }
+            page--;
+        }
+        scanner.close();
+    }
+
     public static void menu() {
         // menu com as opções que utilizador pode realizar
         System.out.println("1) Indexar um novo Url\n"
@@ -58,9 +85,12 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
                         break;
                     case 2:
                         System.out.println("Insira o termo de pesquisa:");
-                        String termo = sc.next();
-                        // pesquisar(termo);
-                        break;
+                        if (sc.hasNext()) {
+                            String termo = sc.next();
+                            printResults(gateway.searchWord(termo));
+                        } else {
+                            System.out.println("Nenhuma entrada fornecida.");
+                        }
                     case 3:
                         // admin();
                         break;
@@ -84,9 +114,9 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
             String username = new String();
             username = sc.next();
             System.out.println("Conectando ao servidor...");
-            GateWayInterface gateway = (GateWayInterface) Naming.lookup("rmi://localhost/gate");
+            GateWayInterface gateway = (GateWayInterface) Naming.lookup("rmi://localhost:1099/client");
             Client client = new Client();
-            gateway.subscribeuser(username, (ClientInterface) client);
+            id = gateway.subscribeuser((ClientInterface) client);
             System.out.println("Client sent subscription request to server.\n");
             client.start(sc, gateway, username);
         } catch (RemoteException | MalformedURLException | NotBoundException e) {
