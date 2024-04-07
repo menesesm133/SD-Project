@@ -79,6 +79,19 @@ public class GateWay extends UnicastRemoteObject implements GateWayInterface {
         return results;
     }
 
+    public List<String> searchUrls(String url) throws RemoteException {
+        List<String> results = new ArrayList<>();
+        for (IndexStorageInterface storage : storages) {
+            if (storage.isupdated()) {
+                List<String> storageResults = storage.getLinkedPages(url);
+                if (storageResults != null) {
+                    results.addAll(storageResults);
+                }
+            }
+        }
+        return results;
+    }
+
     public void indexUrl(String name, String url) {
         try {
             System.out.println(name + ">" + "Indexing URL: " + url);

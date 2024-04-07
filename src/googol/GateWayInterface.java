@@ -17,4 +17,5 @@ public interface GateWayInterface extends Remote {
 
     public List<String> searchWord(String keys) throws RemoteException;
 
+    public List<String> searchUrls(String url) throws RemoteException;
 }

@@ -43,8 +43,8 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
     public static void menu() {
         // menu com as opções que utilizador pode realizar
         System.out.println("1) Indexar um novo Url\n"
-                + "2) Pesquisar\n"
-                + "3) Página de administração atualizada em tempo real\n"
+                + "2) Pesquisar por palavra\n"
+                + "3) Pesquisar por URL\n"
                 + "4) Sair\n");
 
         System.out.println("Digite a opção desejada:");
@@ -73,6 +73,7 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
                         String url = sc.next();
                         gateway.indexUrl(username, url);
                         break;
+
                     case 2:
                         System.out.println("Insira o termo de pesquisa:");
                         if (sc.hasNext()) {
@@ -81,8 +82,15 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
                         } else {
                             System.out.println("Nenhuma entrada fornecida.");
                         }
+                        break;
                     case 3:
-                        // admin();
+                        System.out.println("Insira o url de pesquisa:");
+                        if (sc.hasNext()) {
+                            String urlpesquisa = sc.next();
+                            printResults(gateway.searchUrls(urlpesquisa));
+                        } else {
+                            System.out.println("Nenhuma entrada fornecida.");
+                        }
                         break;
                     case 4:
                         System.out.println("A sair...");

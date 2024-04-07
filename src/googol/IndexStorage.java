@@ -104,6 +104,36 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
 
     }
 
+    public List<String> getLinkedPages(String url) {
+        System.out.println("Searching for: " + url);
+        HashSet<String> linkedUrls = urls.get(url);
+        System.out.println("Linked URLs: " + linkedUrls);
+
+        if (linkedUrls == null) {
+            System.out.println("URL not found");
+            return null;
+        }
+
+        List<String> results = new ArrayList<>();
+        for (String linkedUrl : linkedUrls) {
+            URLContent content = findContentByUrl(linkedUrl);
+            System.out.println("Content: " + content);
+            if (content != null) {
+                results.add("Title: " + content.getTitle());
+                results.add("URL: " + content.getUrl());
+                String text = content.getText();
+                String[] words = text.split("\\s+");
+                String limitedText = String.join(" ", Arrays.copyOfRange(words, 0, Math.min(words.length, 20)));
+                results.add("Text: " + limitedText);
+                results.add("----------");
+            }
+        }
+
+        System.out.println("Results: " + results.size());
+
+        return results;
+    }
+
     public ArrayList<String> search(String word) {
         StringTokenizer token = new StringTokenizer(word, " ,:/.?'_");
         HashSet<String> next = null;
@@ -172,9 +202,7 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
                 results.add("Title: " + content.getTitle());
                 results.add("URL: " + content.getUrl());
                 String text = content.getText();
-                String[] words = text.split("\\s+");
-                String limitedText = String.join(" ", Arrays.copyOfRange(words, 0, Math.min(words.length, 20)));
-                results.add("Text: " + limitedText);
+                results.add("Text: " + text);
                 results.add("----------");
             }
         }
