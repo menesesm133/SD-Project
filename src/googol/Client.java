@@ -3,6 +3,7 @@ package googol;
 import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 
@@ -13,6 +14,18 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
         super();
     }
 
+    /**
+     * Prints the results in a paginated format.
+     *
+     * This method prints the results in pages of 10 items each, with each item
+     * consisting of 4 lines. The user is prompted to enter the number of the next
+     * page to view. If the user enters 0, the method exits. If there are no more
+     * results to display, the method informs the user and exits.
+     *
+     * @param results The list of results to print. Each result is a string and the
+     *                list is assumed to be in the order in which the results should
+     *                be printed.
+     */
     public void printResults(List<String> results) {
         Scanner scanner = new Scanner(System.in);
         int page = 0;
@@ -40,6 +53,14 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
         }
     }
 
+    /**
+     * Prints the main menu options to the console.
+     *
+     * This method displays a list of options that the user can perform. The options
+     * include indexing a new URL, searching by word, searching by URL, and exiting
+     * the program. After displaying the options, it prompts the user to enter their
+     * desired option.
+     */
     public static void menu() {
         // menu com as opções que utilizador pode realizar
         System.out.println("1) Indexar um novo Url\n"
@@ -60,6 +81,27 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
         return sc.nextInt();
     }
 
+    /**
+     * Starts the client application and handles user input.
+     *
+     * This method displays a menu to the user and processes their input. The user
+     * can choose to index a new URL, search by word, search by URL, or exit the
+     * application. The user's input is validated before being processed. If the
+     * user enters an invalid option, a message is displayed and the menu is shown
+     * again. If a RemoteException occurs during the execution of an option, the
+     * stack trace is printed to the standard error stream.
+     *
+     * @param sc       The Scanner object to read user input.
+     * @param gateway  The GateWayInterface object to perform operations.
+     * @param username The username of the user.
+     * @throws RemoteException       If a remote access error occurs.
+     * @throws NotBoundException     If an attempt is made to lookup or unbind in
+     *                               the registry a name that has no associated
+     *                               binding.
+     * @throws MalformedURLException If a string is passed as a parameter to a
+     *                               method and the string does not have the
+     *                               appropriate format.
+     */
     public void start(Scanner sc, GateWayInterface gateway, String username)
             throws RemoteException, NotBoundException, MalformedURLException {
         int opcao = 0;
@@ -87,7 +129,13 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
                         System.out.println("Insira o url de pesquisa:");
                         if (sc.hasNext()) {
                             String urlpesquisa = sc.next();
-                            printResults(gateway.searchUrls(urlpesquisa));
+
+                            HashSet<String> urlslists = gateway.searchUrls(urlpesquisa);
+
+                            for (String url1 : urlslists) {
+                                System.out.println(url1);
+                            }
+
                         } else {
                             System.out.println("Nenhuma entrada fornecida.");
                         }

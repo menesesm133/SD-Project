@@ -1,6 +1,7 @@
 package googol;
 
 import java.rmi.*;
+import java.util.HashSet;
 import java.util.List;
 
 public interface GateWayInterface extends Remote {
@@ -15,5 +16,5 @@ public interface GateWayInterface extends Remote {
 
     public List<String> searchWord(String keys) throws RemoteException;
 
-    public List<String> searchUrls(String url) throws RemoteException;
+    public HashSet<String> searchUrls(String url) throws RemoteException;
 }

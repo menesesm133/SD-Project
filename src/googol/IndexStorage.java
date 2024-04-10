@@ -42,6 +42,16 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
     private long lastmessageId;
     private Set<String> ignoreWords;
 
+    /**
+     * Represents an index storage for storing word counts, contents, URLs, and
+     * other related information.
+     * This class initializes the necessary data structures and establishes a
+     * connection with the remote server.
+     *
+     * @throws NotBoundException if the remote object is not bound in the registry
+     * @throws IOException       if an I/O error occurs while reading the ignore
+     *                           words file
+     */
     public IndexStorage() throws NotBoundException, IOException {
         super();
         ignoreWords = new HashSet<>(Files.readAllLines(Paths.get(
@@ -56,30 +66,74 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         gateway = (GateWayInterface) Naming.lookup("rmi://localhost:1100/barrel");
     }
 
+    /**
+     * Checks if the content is updated.
+     *
+     * @return true if the content is updated, false otherwise.
+     * @throws RemoteException If a remote access error occurred.
+     */
     public boolean isupdated() throws RemoteException {
         return this.updated;
     }
 
+    /**
+     * Gets the count of each word in the content.
+     *
+     * @return A map where the keys are words and the values are their counts.
+     */
     public Map<String, Integer> getWordCount() {
         return wordCount;
     }
 
+    /**
+     * Gets the content.
+     *
+     * @return A HashSet containing the content.
+     */
     public HashSet<URLContent> getContent() {
         return contents;
     }
 
+    /**
+     * Gets the URLs.
+     *
+     * @return A HashMap where the keys are URLs and the values are HashSets of URLs
+     *         that link to the key URL.
+     */
     public HashMap<String, HashSet<String>> getUrls() {
         return urls;
     }
 
+    /**
+     * Gets the URLs associated with each word.
+     *
+     * @return A HashMap where the keys are words and the values are HashSets of
+     *         URLs where the key word appears.
+     */
     public HashMap<String, HashSet<String>> getUrlsWord() {
         return urlsWord;
     }
 
+    /**
+     * Gets the count of each URL in the content.
+     *
+     * @return A map where the keys are URLs and the values are their counts.
+     */
     public Map<String, Integer> getUrlCount() {
         return urlCount;
     }
 
+    /**
+     * Updates the storage with new data.
+     *
+     * @param updatedWordCount A map with words as keys and their counts as values.
+     * @param updatedcontent   A HashSet of updated content.
+     * @param updatedurls      A HashMap with URLs as keys and HashSets of URLs that
+     *                         link to the key URL as values.
+     * @param updatedurlsWord  A HashMap with words as keys and HashSets of URLs
+     *                         where the key word appears as values.
+     * @param urlCount         A map with URLs as keys and their counts as values.
+     */
     public void updateStorage(Map<String, Integer> updatedWordCount, HashSet<URLContent> updatedcontent,
             HashMap<String, HashSet<String>> updatedurls, HashMap<String, HashSet<String>> updatedurlsWord,
             Map<String, Integer> urlCount) {
@@ -93,45 +147,63 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         System.out.println("Storage " + id + " updated");
     }
 
+    /**
+     * Gets the ID of the storage.
+     *
+     * @return The ID of the storage.
+     */
     public int getId() {
         return id;
     }
 
+    /**
+     * Searches for a word in the storage and returns the URLs where it appears.
+     *
+     * @param token The word to search for.
+     * @return A HashSet of URLs where the word appears.
+     */
     public HashSet<String> searchWord(String token) {
         // System.out.println("Searching for: " + urlsWord.get(token));
         return urlsWord.get(token);
-
     }
 
-    public List<String> getLinkedPages(String url) {
+    /**
+     * Gets the URLs that link to a given URL.
+     *
+     * @param url The URL to search for.
+     * @return A list of URLs that link to the given URL.
+     */
+
+    public HashSet<String> getLinkedPages(String url) {
+
+        System.out.println("Size of contents: " + contents.size());
+
         System.out.println("Searching for: " + url);
         HashSet<String> linkedUrls = urls.get(url);
         System.out.println("Linked URLs: " + linkedUrls);
 
-        if (linkedUrls == null) {
-            System.out.println("URL not found");
-            return null;
-        }
-
-        List<String> results = new ArrayList<>();
-        for (String linkedUrl : linkedUrls) {
-            URLContent content = findContentByUrl(linkedUrl);
-            System.out.println("Content: " + content);
-            if (content != null) {
-                results.add("Title: " + content.getTitle());
-                results.add("URL: " + content.getUrl());
-                String text = content.getText();
-                String[] words = text.split("\\s+");
-                String limitedText = String.join(" ", Arrays.copyOfRange(words, 0, Math.min(words.length, 20)));
-                results.add("Text: " + limitedText);
-                results.add("----------");
-            }
-        }
-
-        System.out.println("Results: " + results.size());
-
-        return results;
+        return linkedUrls;
     }
+
+    /**
+     * Searches for a word and returns a list of important URLs where the word
+     * appears.
+     *
+     * The method tokenizes the input word by several delimiters (" ,:/.?'_") and
+     * for each token, it checks if it's in the ignoreWords list. If the token is
+     * not in the ignoreWords list or it's the last token, it searches for the token
+     * in the storage.
+     *
+     * If the token is found, it retains the URLs where the token appears. If the
+     * token is not found, it returns an empty list.
+     *
+     * After all tokens are processed, it gets a list of important URLs and retains
+     * only the URLs where the tokens appear. This list is then returned.
+     *
+     * @param word The word to search for.
+     * @return A list of important URLs where the word appears. If the word is not
+     *         found, returns an empty list.
+     */
 
     public ArrayList<String> search(String word) {
         StringTokenizer token = new StringTokenizer(word, " ,:/.?'_");
@@ -167,7 +239,16 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         return vazia;
     }
 
-    // Por aquilo que eu vi isto deve funceminar, mas ainda não testei.
+    /**
+     * Gets a list of important URLs.
+     *
+     * The method sorts the URLs in the urlCount map in descending order of their
+     * counts. It then iterates over the sorted entries and adds the URLs with a
+     * count of 1 or more to the list of important URLs.
+     *
+     * @return A list of important URLs. If there are no URLs with a count of 1 or
+     *         more, returns an empty list.
+     */
     public ArrayList<String> urlImportance() {
         List<Map.Entry<String, Integer>> sortedUrls = new ArrayList<>(urlCount.entrySet());
         sortedUrls.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
@@ -185,6 +266,18 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         return importantUrls;
     }
 
+    /**
+     * Prints the search results for a given word.
+     *
+     * The method searches for the word in the storage and gets the URLs where the
+     * word appears. It then iterates over the URLs and prints the title, URL, and
+     * text of the content associated with each URL.
+     *
+     * @param keys The word to search for.
+     * @return A list of strings where each string is a representation of a search
+     *         result. Each representation includes the title, URL, and text of the
+     *         content associated with the search result.
+     */
     public List<String> printSearchWords(String keys) {
         ArrayList<String> urls = search(keys);
 
@@ -211,6 +304,13 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         return results;
     }
 
+    /**
+     * Finds the content associated with a given URL.
+     *
+     * @param url The URL to search for.
+     * @return The content associated with the URL. If the URL is not found, returns
+     *         null.
+     */
     private URLContent findContentByUrl(String url) {
         for (URLContent content : contents) {
             if (content.getUrl().equals(url)) {
@@ -220,6 +320,19 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         return null;
     }
 
+    /**
+     * Adds new content to the storage.
+     *
+     * This method creates a new URLContent object with the provided url, text, and
+     * title. It then adds this content to the contents set, adds the set of urls to
+     * the urls map with the provided url as the key, and updates the urlCount map
+     * with the size of the urls set.
+     *
+     * @param url   The URL of the new content.
+     * @param text  The text of the new content.
+     * @param title The title of the new content.
+     * @param urls  A HashSet of URLs related to the new content.
+     */
     public void addContent(String url, String text, String title, HashSet<String> urls) {
         URLContent content = new URLContent();
         content.url = url;
@@ -230,6 +343,14 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         urlCount.merge(url, urls.size(), Integer::sum);
     }
 
+    /**
+     * Adds a URL to the storage.
+     *
+     * This method adds the provided url to the urls map with an empty HashSet as
+     * the value and updates the urlCount map with a count of 0.
+     *
+     * @param url The URL to add.
+     */
     public void addUrlsWord(String word, String url) {
         HashSet<String> nameUrls = urlsWord.get(word);
 
@@ -241,6 +362,20 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         nameUrls.add(url);
         wordCount.merge(word, 1, Integer::sum);
     }
+
+    /**
+     * Writes the current state of the database to a file.
+     *
+     * This method writes the contents, wordCount, urlCount, urls, and urlsWord to a
+     * file. Each URLContent object in contents is written as a line with the url,
+     * title, and text separated by "|". Each entry in wordCount and urlCount is
+     * written as a line with the key and value separated by "|". Each entry in urls
+     * and urlsWord is written as a line with the key followed by a "|" and then
+     * each url in the value set separated by ",".
+     *
+     * If an exception occurs during the writing process, the stack trace is printed
+     * to the standard error stream.
+     */
 
     public void writeDatabase() {
         try {
@@ -281,6 +416,16 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         }
     }
 
+    /**
+     * Reads the database from a file.
+     *
+     * This method reads the contents, wordCount, urlCount, urls, and urlsWord from
+     * a file. Each line in the file is split by "|" and the parts are used to
+     * populate the data structures.
+     *
+     * If an exception occurs during the reading process, the stack trace is printed
+     * to the standard error stream.
+     */
     public void readDataBase() {
         try {
             Scanner scanner = new Scanner(new File(database));
@@ -311,6 +456,23 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         }
     }
 
+    /**
+     * Listens for packets on a multicast socket and processes them.
+     *
+     * This method creates a MulticastSocket and joins a multicast group. It then
+     * enters a loop where it waits for packets to be received. When a packet is
+     * received, it is split into parts and processed. The messageId is extracted
+     * from the first part, and the title, text, url, and links are extracted from
+     * the subsequent parts. The content is then added to the storage and the words
+     * in the title and text are added to the urlsWord map. If the difference
+     * between the current messageId and the last messageId is greater than 2, the
+     * storage is updated.
+     *
+     * If an exception occurs during the execution of the method, the stack trace is
+     * printed to the standard error stream.
+     *
+     * @throws RemoteException If a remote access error occurs.
+     */
     public void run() throws RemoteException {
         try (MulticastSocket socket = new MulticastSocket(PORT)) {
             InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
@@ -386,6 +548,8 @@ public class IndexStorage extends UnicastRemoteObject implements IndexStorageInt
         }
     }
 
+
+    
     public static void main(String[] args) throws NotBoundException, IOException, InterruptedException {
         System.out.println("Index Storage Barrels is starting...");
         IndexStorageInterface barrel = new IndexStorage();

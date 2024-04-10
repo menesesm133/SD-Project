@@ -41,5 +41,7 @@ public interface IndexStorageInterface extends Remote {
 
     public List<String> printSearchWords(String words) throws RemoteException;
 
-    public List<String> getLinkedPages(String url) throws RemoteException;
+    public HashSet<String> getLinkedPages(String url) throws RemoteException;
+
+    public void readDataBase() throws RemoteException;
 }
